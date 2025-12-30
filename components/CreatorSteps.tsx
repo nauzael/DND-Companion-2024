@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Character, CreatorStep, Ability } from '../types';
+import { Character, CreatorStep, Ability, Trait } from '../types';
 import { MAP_TEXTURE, CLASS_UI_MAP, SPECIES_UI_MAP, BACKGROUND_UI_MAP } from '../constants';
 import { 
   CLASS_LIST, 
@@ -12,9 +12,10 @@ import {
   CLASS_DETAILS,
   HIT_DIE,
   CLASS_STAT_PRIORITIES,
-  SUBCLASS_OPTIONS
+  SUBCLASS_OPTIONS,
+  CLASS_PROGRESSION
 } from '../Data/characterOptions';
-import { FEAT_OPTIONS } from '../Data/feats';
+import { FEAT_OPTIONS, GENERIC_FEATURES } from '../Data/feats';
 import { SKILL_LIST } from '../Data/skills';
 import { TRINKETS } from '../Data/items';
 
@@ -80,7 +81,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
   // Point Buy Logic
   const usedPoints = useMemo(() => {
-    return Object.values(baseStats).reduce((acc, val) => acc + (POINT_BUY_COSTS[val] || 0), 0);
+    return Object.values(baseStats).reduce((acc: number, val) => acc + (POINT_BUY_COSTS[val as number] || 0), 0);
   }, [baseStats]);
   
   const remainingPoints = 27 - usedPoints;
@@ -235,6 +236,79 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     </div>
   );
 
+  const ClassProgressionList = ({ selectedClass }: { selectedClass: string }) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+      <div className="mt-6 space-y-3 px-6">
+        <div className="border border-slate-200 dark:border-white/10 rounded-2xl bg-white dark:bg-surface-dark overflow-hidden transition-all duration-300 shadow-sm">
+            <button 
+              onClick={() => setIsOpen(!isOpen)}
+              className={`w-full flex items-center justify-between p-4 text-left transition-colors ${isOpen ? 'bg-slate-50 dark:bg-white/5' : 'hover:bg-slate-50 dark:hover:bg-white/5'}`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isOpen ? 'bg-primary text-white' : 'bg-primary/10 text-primary'}`}>
+                   <span className="material-symbols-outlined">school</span>
+                </div>
+                <div>
+                   <h3 className="text-base font-bold text-slate-900 dark:text-white">Progresión de Clase</h3>
+                   <p className="text-xs text-slate-500 dark:text-slate-400">Ver niveles 1-20</p>
+                </div>
+              </div>
+              <span className={`material-symbols-outlined text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-primary' : ''}`}>
+                expand_more
+              </span>
+            </button>
+            
+            <div className={`transition-[grid-template-rows] duration-500 ease-in-out grid ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+                <div className="overflow-hidden">
+                    <div className="p-4 pt-2 space-y-0 bg-slate-50/50 dark:bg-black/20 border-t border-slate-100 dark:border-white/5">
+                        {Array.from({ length: 20 }, (_, i) => i + 1).map((lvl) => {
+                            let features: string[] = [];
+                            if (lvl === 1) {
+                               features = classData?.traits.map(t => t.name) || [];
+                            } else {
+                               features = CLASS_PROGRESSION[selectedClass]?.[lvl] || [];
+                            }
+                            
+                            if (!features || features.length === 0) return null;
+
+                            return (
+                                <div key={lvl} className="relative pl-6 pb-6 border-l-2 border-slate-200 dark:border-slate-700 ml-2 last:border-0 last:pb-0">
+                                    <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 transition-colors ${lvl <= level ? 'bg-primary border-primary' : 'bg-background-light dark:bg-background-dark border-slate-300 dark:border-slate-600'}`}></div>
+                                    
+                                    <div className="flex flex-col gap-1 -mt-1.5">
+                                        <span className={`text-xs font-bold uppercase tracking-wider ${lvl <= level ? 'text-primary' : 'text-slate-400'}`}>Nivel {lvl}</span>
+                                        <div className="space-y-2 mt-1">
+                                            {features.map(feat => {
+                                                let desc = GENERIC_FEATURES?.[feat];
+                                                if (lvl === 1 && !desc) {
+                                                    const trait = classData?.traits.find(t => t.name === feat);
+                                                    if (trait) desc = trait.description;
+                                                }
+                                                if (!desc && feat.includes("Subclass")) desc = "Ganás un rasgo de tu subclase elegida.";
+                                                if (!desc && feat.includes("Ability Score")) desc = "Mejora una característica o elige una dote.";
+
+                                                return (
+                                                    <div key={feat} className={`bg-white dark:bg-surface-dark p-3 rounded-lg border shadow-sm ${lvl <= level ? 'border-primary/30' : 'border-slate-200 dark:border-white/5'}`}>
+                                                        <span className={`block font-bold text-sm ${lvl <= level ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>{feat}</span>
+                                                        <span className="block text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{desc}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col h-full min-h-screen relative bg-background-light dark:bg-background-dark">
       <header className="flex items-center justify-between p-4 pt-6 z-10 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm sticky top-0">
@@ -371,6 +445,8 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                         </div>
                     </div>
 
+                    <ClassProgressionList selectedClass={selectedClass} />
+
                     <div className="px-6 mt-4">
                         <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Nivel</label>
                         <div className="relative">
@@ -384,7 +460,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                 ))}
                             </select>
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center text-slate-500 dark:text-slate-400">
-                                <span className="material-symbols-outlined">unfold_more</span>
+                                <span className="material-symbols-outlined">expand_more</span>
                             </div>
                         </div>
                     </div>
@@ -450,14 +526,17 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                 <div className="flex justify-center">
                                     <span className="text-[10px] font-bold uppercase text-slate-400 bg-slate-100 dark:bg-white/5 px-3 py-1 rounded-full tracking-wider">Rasgos de {selectedSubclassData.name}</span>
                                 </div>
-                                {Object.entries(selectedSubclassData.features).flatMap(([lvl, traits]) => {
-                                    if (Number(lvl) > level) return [];
-                                    return traits.map(trait => (
-                                        <div key={trait.name} className="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm text-left">
+                                {Object.entries(selectedSubclassData.features)
+                                    .sort((a, b) => Number(a[0]) - Number(b[0]))
+                                    .flatMap(([lvl, traits]) => {
+                                    const featureLevel = Number(lvl);
+                                    const isFuture = featureLevel > level;
+                                    return (traits as Trait[]).map(trait => (
+                                        <div key={trait.name} className={`bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm text-left ${isFuture ? 'opacity-75' : ''}`}>
                                             <div className="flex flex-col items-start gap-1 mb-2">
                                                 <div className="flex w-full justify-between items-start">
                                                     <p className="font-bold text-sm text-slate-900 dark:text-white">{trait.name}</p>
-                                                    <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 shrink-0">Nivel {lvl}</span>
+                                                    <span className={`inline-block text-[9px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${isFuture ? 'bg-slate-100 dark:bg-white/5 text-slate-500 border-slate-200 dark:border-white/10' : 'bg-primary/10 text-primary border-primary/20'}`}>Nivel {lvl}</span>
                                                 </div>
                                             </div>
                                             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{trait.description}</p>
@@ -471,6 +550,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
                 <div className="space-y-3">
                     <SectionSeparator label="Raza" />
+                    {/* ... (Rest of Step 1) */}
                     <div className="px-6">
                         <div className="flex justify-between items-end mb-3">
                              <h3 className="text-lg font-bold">Raza</h3>
@@ -806,7 +886,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                       { l: 'HP', v: newCharacter.hp.max, i: 'favorite', c: 'text-red-500' },
                       { l: 'AC', v: newCharacter.ac, i: 'shield', c: 'text-blue-500' },
                       { l: 'SPD', v: newCharacter.speed, i: 'directions_run', c: 'text-green-500' },
-                      { l: 'INI', v: `+${newCharacter.init}`, i: 'bolt', c: 'text-yellow-500' }
+                      { l: 'INI', v: `${newCharacter.init >= 0 ? '+' : ''}${newCharacter.init}`, i: 'bolt', c: 'text-yellow-500' }
                     ].map(s => (
                         <div key={s.l} className="flex flex-col items-center p-2.5 rounded-2xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 shadow-sm">
                             <span className={`material-symbols-outlined ${s.c} text-lg mb-1`}>{s.i}</span>

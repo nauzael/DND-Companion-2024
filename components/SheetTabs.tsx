@@ -11,13 +11,17 @@ interface SheetTabsProps {
 const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack }) => {
   const [activeTab, setActiveTab] = useState<SheetTab>('combat');
 
+  const formatModifier = (val: number) => {
+    return `${val >= 0 ? '+' : ''}${val}`;
+  };
+
   const renderCombat = () => (
     <div className="px-4 pb-24">
       {/* Quick Stats */}
       <div className="grid grid-cols-4 gap-3 my-4">
         {[
           { icon: "shield", label: "AC", value: character.ac, color: "text-primary" },
-          { icon: "bolt", label: "Init", value: `${character.init >= 0 ? '+' : ''}${character.init}`, color: "text-yellow-500" },
+          { icon: "bolt", label: "Init", value: formatModifier(character.init), color: "text-yellow-500" },
           { icon: "sprint", label: "Spd", value: character.speed, color: "text-blue-400" },
           { icon: "school", label: "Prof", value: `+${character.profBonus}`, color: "text-purple-400" },
         ].map(stat => (
@@ -61,6 +65,8 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack }) => {
          {['Longsword', 'Dagger'].map(wName => {
              const weapon = ALL_WEAPONS[wName];
              if (!weapon) return null;
+             // Mock calculation for demo purposes: Prof + 3 (approx STR/DEX mod)
+             const toHit = character.profBonus + 3;
              return (
              <div key={weapon.name} className="rounded-2xl bg-white dark:bg-surface-dark p-4 shadow-sm ring-1 ring-slate-200 dark:ring-white/5 hover:ring-primary/50 dark:hover:ring-primary/50 transition-all">
                 <div className="flex justify-between items-start mb-3">
@@ -85,7 +91,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack }) => {
                 <div className="grid grid-cols-2 gap-3">
                    <button className="flex flex-col items-center justify-center py-2 px-4 rounded-xl bg-slate-50 dark:bg-black/20 hover:bg-primary/10 dark:hover:bg-primary/20 hover:ring-1 ring-primary/50 transition-all group">
                        <span className="text-xs font-bold text-slate-400 group-hover:text-primary uppercase tracking-wider mb-1">To Hit</span>
-                       <span className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-primary">+{character.profBonus + 3}</span> 
+                       <span className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-primary">{formatModifier(toHit)}</span> 
                    </button>
                    <button className="flex flex-col items-center justify-center py-2 px-4 rounded-xl bg-slate-50 dark:bg-black/20 hover:bg-primary/10 dark:hover:bg-primary/20 hover:ring-1 ring-primary/50 transition-all group">
                        <span className="text-xs font-bold text-slate-400 group-hover:text-primary uppercase tracking-wider mb-1">Damage</span>
@@ -179,26 +185,31 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack }) => {
     </div>
   );
 
-  const renderSpells = () => (
+  const renderSpells = () => {
+    const intMod = Math.floor((character.stats.INT - 10) / 2);
+    const saveDC = 8 + character.profBonus + intMod;
+    const spellAttack = character.profBonus + intMod;
+
+    return (
     <div className="flex flex-col gap-6 px-4 pb-24">
        {/* Stats */}
        <div className="grid grid-cols-3 gap-3 mt-4">
            <div className="flex flex-col gap-1 rounded-xl bg-white dark:bg-surface-dark border border-gray-200 dark:border-white/10 p-3 items-center text-center shadow-sm">
-              <p className="text-primary tracking-tight text-2xl font-bold leading-none">+{Math.floor((character.stats.INT - 10) / 2)}</p>
+              <p className="text-primary tracking-tight text-2xl font-bold leading-none">{formatModifier(intMod)}</p>
               <div className="flex items-center gap-1 opacity-80">
                  <span className="material-symbols-outlined text-gray-500 dark:text-slate-400 text-[16px]">psychology</span>
                  <p className="text-gray-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">MOD</p>
               </div>
            </div>
            <div className="flex flex-col gap-1 rounded-xl bg-white dark:bg-surface-dark border-2 border-primary/20 dark:border-primary/30 p-3 items-center text-center shadow-sm relative overflow-hidden">
-              <p className="text-gray-900 dark:text-white tracking-tight text-2xl font-bold leading-none">{8 + character.profBonus + Math.floor((character.stats.INT - 10) / 2)}</p>
+              <p className="text-gray-900 dark:text-white tracking-tight text-2xl font-bold leading-none">{saveDC}</p>
               <div className="flex items-center gap-1 opacity-80 z-10">
                  <span className="material-symbols-outlined text-gray-500 dark:text-slate-400 text-[16px]">shield</span>
                  <p className="text-gray-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Save DC</p>
               </div>
            </div>
            <div className="flex flex-col gap-1 rounded-xl bg-white dark:bg-surface-dark border border-gray-200 dark:border-white/10 p-3 items-center text-center shadow-sm">
-              <p className="text-primary tracking-tight text-2xl font-bold leading-none">+{character.profBonus + Math.floor((character.stats.INT - 10) / 2)}</p>
+              <p className="text-primary tracking-tight text-2xl font-bold leading-none">{formatModifier(spellAttack)}</p>
               <div className="flex items-center gap-1 opacity-80">
                  <span className="material-symbols-outlined text-gray-500 dark:text-slate-400 text-[16px]">swords</span>
                  <p className="text-gray-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Attack</p>
@@ -265,6 +276,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack }) => {
        </div>
     </div>
   );
+  };
 
   return (
     <div className="flex flex-col h-full min-h-screen relative bg-background-light dark:bg-background-dark">
