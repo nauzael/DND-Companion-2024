@@ -108,7 +108,13 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     if (card) card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   }, [selectedBackground]);
 
-  // Removed level and subclass auto-scroll effects to prevent jumping
+  // Subclass auto-scroll
+  useEffect(() => {
+    if (selectedSubclass) {
+        const card = document.getElementById(`subclass-card-${selectedSubclass}`);
+        if (card) card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, [selectedSubclass]);
 
   // Reset skills/subclass when class changes
   useEffect(() => {
@@ -447,12 +453,14 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                 {Object.entries(selectedSubclassData.features).flatMap(([lvl, traits]) => {
                                     if (Number(lvl) > level) return [];
                                     return traits.map(trait => (
-                                        <div key={trait.name} className="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm text-center">
-                                            <div className="flex flex-col items-center gap-1 mb-2">
-                                                <p className="font-bold text-sm text-slate-900 dark:text-white">{trait.name}</p>
-                                                <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">Nivel {lvl}</span>
+                                        <div key={trait.name} className="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm text-left">
+                                            <div className="flex flex-col items-start gap-1 mb-2">
+                                                <div className="flex w-full justify-between items-start">
+                                                    <p className="font-bold text-sm text-slate-900 dark:text-white">{trait.name}</p>
+                                                    <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 shrink-0">Nivel {lvl}</span>
+                                                </div>
                                             </div>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs mx-auto">{trait.description}</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{trait.description}</p>
                                         </div>
                                     ));
                                 })}
