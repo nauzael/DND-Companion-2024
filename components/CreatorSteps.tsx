@@ -155,6 +155,11 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   const [hpMethod, setHpMethod] = useState<'average' | 'manual'>('average');
   const [manualRolledHP, setManualRolledHP] = useState<number>(0);
   
+  // Background ASI Configuration
+  const [bgAsiMode, setBgAsiMode] = useState<'three' | 'two'>('three'); // 'three' (+1/+1/+1) or 'two' (+2/+1)
+  const [bgPlus2, setBgPlus2] = useState<Ability>('STR');
+  const [bgPlus1, setBgPlus1] = useState<Ability>('DEX');
+
   // ASI Decisions State (Level -> Decision)
   const [asiDecisions, setAsiDecisions] = useState<Record<number, AsiDecision>>({});
 
@@ -183,9 +188,17 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     const stats = { ...baseStats };
     
     // Background Bonuses
-    backgroundData?.scores.forEach(ability => {
-        stats[ability] = Math.min(20, stats[ability] + 1);
-    });
+    if (backgroundData?.scores) {
+        if (bgAsiMode === 'three') {
+             backgroundData.scores.forEach(ability => {
+                stats[ability] = Math.min(20, stats[ability] + 1);
+            });
+        } else {
+             // +2 to one, +1 to another
+             if (bgPlus2) stats[bgPlus2] = Math.min(20, stats[bgPlus2] + 2);
+             if (bgPlus1) stats[bgPlus1] = Math.min(20, stats[bgPlus1] + 1);
+        }
+    }
 
     // Apply ASIs
     asiLevels.forEach(lvl => {
@@ -197,7 +210,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     });
 
     return stats;
-  }, [baseStats, backgroundData, asiLevels, asiDecisions]);
+  }, [baseStats, backgroundData, bgAsiMode, bgPlus2, bgPlus1, asiLevels, asiDecisions]);
 
   // Point Buy Logic
   const usedPoints = useMemo(() => {
@@ -232,6 +245,15 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   useEffect(() => {
       setManualRolledHP(0);
   }, [selectedClass]);
+
+  // Reset Background ASI defaults when background changes
+  useEffect(() => {
+    if (backgroundData?.scores && backgroundData.scores.length >= 2) {
+        setBgPlus2(backgroundData.scores[0]);
+        setBgPlus1(backgroundData.scores[1]);
+        setBgAsiMode('three'); // Default back to flat mode
+    }
+  }, [selectedBackground, backgroundData]);
 
   // Auto-select first subclass if level >= 3 and none selected
   useEffect(() => {
@@ -926,6 +948,79 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
         {step === 2 && (
             <div className="px-6 py-4 space-y-6">
+                
+                {/* Background Bonuses Config */}
+                <div className="bg-white dark:bg-surface-dark p-4 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm">
+                    <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary text-lg">auto_awesome</span>
+                        Bonificadores de Trasfondo <span className="text-slate-400 text-xs font-normal">({selectedBackground})</span>
+                    </h3>
+                    
+                    <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl mb-4">
+                        <button 
+                            onClick={() => setBgAsiMode('three')}
+                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${bgAsiMode === 'three' ? 'bg-white dark:bg-surface-dark shadow text-primary' : 'text-slate-500'}`}
+                        >
+                            +1 / +1 / +1
+                        </button>
+                        <button 
+                            onClick={() => setBgAsiMode('two')}
+                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${bgAsiMode === 'two' ? 'bg-white dark:bg-surface-dark shadow text-primary' : 'text-slate-500'}`}
+                        >
+                            +2 / +1
+                        </button>
+                    </div>
+
+                    {bgAsiMode === 'three' ? (
+                        <div className="flex gap-2 justify-center">
+                            {backgroundData?.scores.map(s => (
+                                <div key={s} className="px-3 py-1.5 bg-primary/10 border border-primary/20 text-primary rounded-lg font-bold text-xs">
+                                    {s} +1
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                                <span className="text-xs font-bold uppercase w-8 text-right text-primary">+2</span>
+                                <div className="flex gap-2 flex-1">
+                                    {backgroundData?.scores.map(s => (
+                                        <button 
+                                            key={s}
+                                            onClick={() => {
+                                                setBgPlus2(s);
+                                                if (bgPlus1 === s) {
+                                                    // Swap or pick another
+                                                    const other = backgroundData.scores.find(x => x !== s) || s;
+                                                    setBgPlus1(other);
+                                                }
+                                            }}
+                                            className={`flex-1 py-1.5 rounded-lg border text-xs font-bold transition-all ${bgPlus2 === s ? 'bg-primary text-white border-primary' : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500'}`}
+                                        >
+                                            {s}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-xs font-bold uppercase w-8 text-right text-slate-500">+1</span>
+                                <div className="flex gap-2 flex-1">
+                                    {backgroundData?.scores.map(s => (
+                                        <button 
+                                            key={s}
+                                            onClick={() => setBgPlus1(s)}
+                                            disabled={bgPlus2 === s}
+                                            className={`flex-1 py-1.5 rounded-lg border text-xs font-bold transition-all ${bgPlus1 === s ? 'bg-slate-600 text-white border-slate-600' : bgPlus2 === s ? 'opacity-30 cursor-not-allowed bg-slate-100 border-transparent' : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500'}`}
+                                        >
+                                            {s}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 <div className="space-y-3">
                     <div className="flex justify-between items-center mb-3">
                         <h3 className="text-xl font-bold">Atributos</h3>
