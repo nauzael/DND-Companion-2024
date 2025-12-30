@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Character, ViewState } from './types';
 import { MOCK_CHARACTERS } from './constants';
@@ -53,7 +54,7 @@ const App: React.FC = () => {
             onFinish={handleFinishCreation} 
           />
         )}
-        {view === 'sheet' && (
+        {view === 'sheet' && activeCharacter && (
           <SheetTabs 
             character={activeCharacter} 
             onBack={() => setView('list')}

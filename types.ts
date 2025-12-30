@@ -68,7 +68,7 @@ export interface ArmorData extends ItemData {
 }
 
 export type ViewState = 'list' | 'create' | 'sheet';
-export type SheetTab = 'combat' | 'inventory' | 'spells';
+export type SheetTab = 'combat' | 'inventory' | 'spells' | 'features';
 export type CreatorStep = 1 | 2 | 3 | 4 | 5;
 
 export type Ability = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
