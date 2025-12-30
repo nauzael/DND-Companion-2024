@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Character, CreatorStep, Ability } from '../types';
-import { MAP_TEXTURE, CLASS_UI_MAP, SPECIES_UI_MAP } from '../constants';
+import { MAP_TEXTURE, CLASS_UI_MAP, SPECIES_UI_MAP, BACKGROUND_UI_MAP } from '../constants';
 import { 
   CLASS_LIST, 
   SPECIES_LIST, 
@@ -87,6 +87,14 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
       card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
   }, [selectedSpecies]);
+
+  // Auto-scroll to selected background
+  useEffect(() => {
+    const card = document.getElementById(`background-card-${selectedBackground}`);
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, [selectedBackground]);
 
   // Reset skills when class changes
   useEffect(() => {
@@ -383,19 +391,53 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                     </div>
 
                     <div>
-                        <h3 className="text-lg font-bold mb-2">Trasfondo</h3>
-                        <div className="relative">
-                             <select 
-                                value={selectedBackground}
-                                onChange={(e) => setSelectedBackground(e.target.value)}
-                                className="w-full appearance-none bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-xl px-4 py-4 pr-10 text-base font-medium focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-shadow text-slate-900 dark:text-white"
-                            >
-                                {Object.keys(BACKGROUNDS_DATA).map(b => <option key={b} value={b}>{b}</option>)}
-                            </select>
-                             <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-500">
-                                <span className="material-symbols-outlined">expand_more</span>
+                        <div className="flex justify-between items-end mb-3">
+                             <h3 className="text-lg font-bold">Trasfondo</h3>
+                             <span className="text-primary text-xs font-medium">{selectedBackground}</span>
+                        </div>
+
+                        <div className="w-full relative group">
+                            <div className="absolute top-0 bottom-0 left-0 w-12 bg-gradient-to-r from-background-light to-transparent dark:from-background-dark z-10 pointer-events-none"></div>
+                            <div className="absolute top-0 bottom-0 right-0 w-12 bg-gradient-to-l from-background-light to-transparent dark:from-background-dark z-10 pointer-events-none"></div>
+
+                            <div className="flex overflow-x-auto gap-4 px-6 py-4 no-scrollbar w-full snap-x snap-mandatory">
+                                {Object.keys(BACKGROUNDS_DATA).map((b) => {
+                                    const ui = BACKGROUND_UI_MAP[b] || { icon: 'person', color: 'text-slate-400' };
+                                    const isSelected = selectedBackground === b;
+                                    return (
+                                        <label key={b} id={`background-card-${b}`} className="relative shrink-0 cursor-pointer group/card snap-center scroll-m-6">
+                                            <input 
+                                                className="peer sr-only" 
+                                                name="background" 
+                                                type="radio" 
+                                                checked={isSelected}
+                                                onChange={() => setSelectedBackground(b)}
+                                            />
+                                            <div className={`
+                                                w-32 h-24 rounded-2xl p-3 flex flex-col items-center justify-center gap-2 transition-all duration-300 ease-out border-2
+                                                ${isSelected 
+                                                    ? 'bg-white dark:bg-surface-dark border-primary shadow-lg scale-105' 
+                                                    : 'bg-white/70 dark:bg-surface-dark/70 border-transparent hover:border-slate-300 dark:hover:border-white/10 hover:bg-white dark:hover:bg-surface-dark'
+                                                }
+                                            `}>
+                                                <span className={`material-symbols-outlined text-2xl ${ui.color} ${isSelected ? 'scale-110' : ''} transition-transform`}>{ui.icon}</span>
+                                                <span className={`font-bold text-xs text-center leading-tight ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
+                                                    {b}
+                                                </span>
+                                                <div className={`
+                                                    absolute top-2 right-2 w-4 h-4 rounded-full bg-primary flex items-center justify-center text-black shadow-sm transition-all duration-300
+                                                    ${isSelected ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}
+                                                `}>
+                                                    <span className="material-symbols-outlined text-[10px] font-bold">check</span>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    );
+                                })}
+                                <div className="w-2 shrink-0"></div>
                             </div>
                         </div>
+
                         <div className="mt-2 p-3 bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-xl">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">

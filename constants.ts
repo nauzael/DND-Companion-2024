@@ -133,3 +133,22 @@ export const SPECIES_UI_MAP: Record<string, { color: string, icon: string }> = {
   "Aasimar": { color: "text-amber-400", icon: "flare" },
   "Goliath": { color: "text-slate-500", icon: "landscape" },
 };
+
+export const BACKGROUND_UI_MAP: Record<string, { color: string, icon: string }> = {
+  'Acolyte': { color: 'text-yellow-500', icon: 'self_improvement' },
+  'Artisan': { color: 'text-orange-500', icon: 'handyman' },
+  'Charlatan': { color: 'text-purple-500', icon: 'theater_comedy' },
+  'Criminal': { color: 'text-slate-500', icon: 'visibility_off' },
+  'Entertainer': { color: 'text-pink-500', icon: 'music_note' },
+  'Farmer': { color: 'text-green-600', icon: 'agriculture' },
+  'Guard': { color: 'text-blue-600', icon: 'local_police' },
+  'Guide': { color: 'text-emerald-500', icon: 'map' },
+  'Hermit': { color: 'text-teal-600', icon: 'nature_people' },
+  'Merchant': { color: 'text-amber-500', icon: 'storefront' },
+  'Noble': { color: 'text-indigo-500', icon: 'diamond' },
+  'Sage': { color: 'text-blue-400', icon: 'menu_book' },
+  'Sailor': { color: 'text-cyan-500', icon: 'sailing' },
+  'Scribe': { color: 'text-slate-600', icon: 'edit_note' },
+  'Soldier': { color: 'text-red-600', icon: 'shield' },
+  'Wayfarer': { color: 'text-lime-600', icon: 'hiking' }
+};
