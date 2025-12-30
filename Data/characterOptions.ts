@@ -116,83 +116,511 @@ export const CLASS_DETAILS: Record<string, DetailData> = {
   'Paladin': { name: 'Paladin', description: 'Smite foes and shield allies with divine and martial might.', traits: [{ name: 'Lay On Hands', description: 'Bonus Action to heal creatures from a pool of HP.' }, { name: 'Spellcasting', description: 'Prepare Divine spells. You can change them after a Long Rest.' }, { name: 'Weapon Mastery', description: 'Master 2 weapons to use their tactical properties.' }, { name: 'Paladin\'s Smite', description: 'Always prepared Divine Smite. Cast once free per Long Rest.' }] },
   'Ranger': { name: 'Ranger', description: 'Weave together martial prowess, nature magic, and survival skills.', traits: [{ name: 'Spellcasting', description: 'Prepare Primal spells. Wisdom is your casting ability.' }, { name: 'Favored Enemy', description: 'You always have Hunter\'s Mark prepared. Cast it without a slot (limited use).' }, { name: 'Weapon Mastery', description: 'Master 2 weapons to use their tactical properties.' }] },
   'Rogue': { name: 'Rogue', description: 'Launch deadly Sneak Attacks while avoiding harm through stealth.', traits: [{ name: 'Expertise', description: 'Double proficiency bonus in two chosen skills.' }, { name: 'Sneak Attack', description: 'Deal extra damage (1d6) once per turn if you have Advantage or an ally nearby.' }, { name: 'Weapon Mastery', description: 'Master 2 weapons to use their tactical properties.' }, { name: 'Thieves\' Cant', description: 'A secret mix of dialect, jargon, and code.' }] },
-  'Sorcerer': { name: 'Sorcerer', description: 'Wield magic innate to your being, shaping the power to your will.', traits: [{ name: 'Spellcasting', description: 'Cast Arcane spells spontaneously. Charisma is your casting ability.' }, { name: 'Innate Sorcery', description: 'Bonus Action to activate a rage-like state increasing spell DC and attack advantage.' }] },
+  'Sorcerer': { name: 'Sorcerer', description: 'Wield magic innate to your being, shaping the power to your will.', traits: [{ name: 'Spellcasting', description: 'Cast Arcane spells spontaneously. Charisma is your casting ability.' }, { name: 'Innate Sorcery', description: 'Bonus Action to activate a rage-like state increasing spell DC and gain Advantage on Sorcerer spell attacks.' }] },
   'Warlock': { name: 'Warlock', description: 'Cast spells derived from occult knowledge.', traits: [{ name: 'Eldritch Invocations', description: 'Customize your powers with unique magical fragments.' }, { name: 'Pact Magic', description: 'Spell slots are always max level and recharge on a Short Rest.' }, { name: 'Magical Cunning', description: 'Regain half your Pact Magic slots once per Long Rest (1-minute rite).' }] },
   'Wizard': { name: 'Wizard', description: 'Study arcane magic and master spells for every purpose.', traits: [{ name: 'Spellcasting', description: 'Learn Arcane spells from scrolls and your spellbook.' }, { name: 'Ritual Adept', description: 'Cast ritual spells from your book without using a spell slot.' }, { name: 'Arcane Recovery', description: 'Regain some spell slots on a Short Rest (once per day).' }] }
 };
 
 export const SUBCLASS_OPTIONS: Record<string, SubclassData[]> = {
   'Barbarian': [
-    { name: 'Path of the Berserker', description: 'Unleash raw violence.', features: { 3: [{ name: 'Frenzy', description: 'If you use Reckless Attack while Raging, deal extra damage (d6s equal to Rage Damage bonus).' }] } }, 
-    { name: 'Path of the Wild Heart', description: 'Manifest kinship with animals.', features: { 3: [{ name: 'Rage of the Wilds', description: 'Choose Bear (Resist all dmg but force/necro/psychic/radiant), Eagle (Disengage/Dash bonus), or Wolf (Advantage for allies).' }, { name: 'Animal Speaker', description: 'Cast Beast Sense and Speak with Animals as Rituals.' }] } }, 
-    { name: 'Path of the World Tree', description: 'Tap into cosmic vitality.', features: { 3: [{ name: 'Vitality of the Tree', description: 'When you Rage, gain Temp HP. At start of turn, give Temp HP to ally.' }] } }, 
-    { name: 'Path of the Zealot', description: 'Rage in union with a god.', features: { 3: [{ name: 'Divine Fury', description: 'While Raging, first hit deals extra Necrotic or Radiant damage (1d6 + 1/2 Level).' }, { name: 'Warrior of the Gods', description: 'Pool of d12s to heal yourself as Bonus Action.' }] } }
+    { 
+        name: 'Path of the Berserker', 
+        description: 'Direct your Rage primarily toward violence.', 
+        features: { 
+            3: [{ name: 'Frenzy', description: 'If you use Reckless Attack while Raging, deal extra damage (d6s equal to Rage Damage bonus).' }],
+            6: [{ name: 'Mindless Rage', description: 'Immunity to Charmed and Frightened while Raging.' }],
+            10: [{ name: 'Retaliation', description: 'Reaction to make a melee attack when damaged by a creature within 5 ft.' }],
+            14: [{ name: 'Intimidating Presence', description: 'Bonus Action to frighten creatures in a 30-ft emanation (Wisdom save).' }]
+        } 
+    },
+    { 
+        name: 'Path of the Wild Heart', 
+        description: 'Walk in community with the animal world.', 
+        features: { 
+            3: [{ name: 'Animal Speaker', description: 'Cast Beast Sense and Speak with Animals as Rituals.' }, { name: 'Rage of the Wilds', description: 'Choose Bear (Resist all dmg but force/necro/psychic/radiant), Eagle (Disengage/Dash bonus), or Wolf (Advantage for allies).' }],
+            6: [{ name: 'Aspect of the Wilds', description: 'Choose Owl (Darkvision), Panther (Climb), or Salmon (Swim).' }],
+            10: [{ name: 'Nature Speaker', description: 'Cast Commune with Nature as a Ritual.' }],
+            14: [{ name: 'Power of the Wilds', description: 'Choose Falcon (Fly), Lion (Enemy Disadvantage), or Ram (Knock Prone).' }]
+        } 
+    },
+    { 
+        name: 'Path of the World Tree', 
+        description: 'Trace the roots and branches of the multiverse.', 
+        features: { 
+            3: [{ name: 'Vitality of the Tree', description: 'When you Rage, gain Temp HP. At start of turn, give Temp HP to ally.' }],
+            6: [{ name: 'Branches of the Tree', description: 'Reaction to teleport or restrain enemy within 30 ft.' }],
+            10: [{ name: 'Battering Roots', description: 'Reach increases by 10 ft. Weapon Mastery properties improve (Push/Topple).' }],
+            14: [{ name: 'Travel Along the Tree', description: 'Teleport up to 60 ft (or 150 ft once per Rage) and bring allies.' }]
+        } 
+    },
+    { 
+        name: 'Path of the Zealot', 
+        description: 'Rage in ecstatic union with a god.', 
+        features: { 
+            3: [{ name: 'Divine Fury', description: 'While Raging, first hit deals extra Necrotic or Radiant damage (1d6 + 1/2 Level).' }, { name: 'Warrior of the Gods', description: 'Pool of d12s to heal yourself as Bonus Action.' }],
+            6: [{ name: 'Fanatical Focus', description: 'Reroll a failed saving throw once per Rage with a bonus.' }],
+            10: [{ name: 'Zealous Presence', description: 'Bonus Action to give allies Advantage on attacks and saves.' }],
+            14: [{ name: 'Rage of the Gods', description: 'Flight, Resistances, and Reaction to prevent death (Revivification).' }]
+        } 
+    }
   ],
   'Bard': [
-    { name: 'College of Dance', description: 'Harness agility in battle.', features: { 3: [{ name: 'Dazzling Footwork', description: 'Unarmored Defense (10+DEX+CHA). Unarmed Strikes use Bardic Die/Dex. Agile Strikes (Unarmed Strike with Bardic Inspiration).' }] } }, 
-    { name: 'College of Glamour', description: 'Weave beguiling Feywild magic.', features: { 3: [{ name: 'Mantle of Inspiration', description: 'Use Bardic Inspiration to give allies Temp HP and Reaction move.' }, { name: 'Beguiling Magic', description: 'Charm Person/Mirror Image prepared. Enchantment/Illusion spells can Charm/Frighten.' }] } }, 
-    { name: 'College of Lore', description: 'Collect knowledge and magical secrets.', features: { 3: [{ name: 'Cutting Words', description: 'Use Reaction and Bardic Inspiration to reduce an enemy attack, check, or damage roll.' }, { name: 'Bonus Proficiencies', description: 'Gain 3 Skill Proficiencies.' }] } }, 
-    { name: 'College of Valor', description: 'Wield weapons with spells.', features: { 3: [{ name: 'Combat Inspiration', description: 'Allies can use your Inspiration to add to AC or Damage.' }, { name: 'Martial Training', description: 'Proficiency with Martial Weapons and Medium Armor/Shields.' }] } }
+    { 
+        name: 'College of Dance', 
+        description: 'Move in harmony with the cosmos.', 
+        features: { 
+            3: [{ name: 'Dazzling Footwork', description: 'Unarmored Defense (10+DEX+CHA). Unarmed Strikes use Bardic Die/Dex. Agile Strikes.' }],
+            6: [{ name: 'Inspiring Movement', description: 'Reaction to move yourself and an ally without opportunity attacks.' }, { name: 'Tandem Footwork', description: 'Boost Initiative for you and allies using Bardic Inspiration.' }],
+            14: [{ name: 'Leading Evasion', description: 'Share Evasion with allies within 5 ft.' }]
+        } 
+    },
+    { 
+        name: 'College of Glamour', 
+        description: 'Weave beguiling Feywild magic.', 
+        features: { 
+            3: [{ name: 'Beguiling Magic', description: 'Charm Person/Mirror Image prepared. Enchantment/Illusion spells can Charm/Frighten.' }, { name: 'Mantle of Inspiration', description: 'Use Bardic Inspiration to give allies Temp HP and Reaction move.' }],
+            6: [{ name: 'Mantle of Majesty', description: 'Cast Command without a spell slot as a Bonus Action.' }],
+            14: [{ name: 'Unbreakable Majesty', description: 'Sanctuary-like effect. Enemies attacking you must save or miss/recoil.' }]
+        } 
+    },
+    { 
+        name: 'College of Lore', 
+        description: 'Plumb the depths of magical knowledge.', 
+        features: { 
+            3: [{ name: 'Bonus Proficiencies', description: 'Gain 3 Skill Proficiencies.' }, { name: 'Cutting Words', description: 'Use Reaction and Bardic Inspiration to reduce an enemy attack, check, or damage roll.' }],
+            6: [{ name: 'Magical Discoveries', description: 'Learn two spells of your choice from any class list (Cleric, Druid, Wizard).' }],
+            14: [{ name: 'Peerless Skill', description: 'Add Bardic Inspiration die to your own ability checks.' }]
+        } 
+    },
+    { 
+        name: 'College of Valor', 
+        description: 'Sing the deeds of ancient heroes.', 
+        features: { 
+            3: [{ name: 'Combat Inspiration', description: 'Allies can use your Inspiration to add to AC or Damage.' }, { name: 'Martial Training', description: 'Proficiency with Martial Weapons and Medium Armor/Shields.' }],
+            6: [{ name: 'Extra Attack', description: 'Attack twice. Can replace one attack with a cantrip.' }],
+            14: [{ name: 'Battle Magic', description: 'Bonus Action attack after casting a spell.' }]
+        } 
+    }
   ],
   'Cleric': [
-    { name: 'Life Domain', description: 'Be a master of healing.', features: { 3: [{ name: 'Disciple of Life', description: 'Healing spells cure extra HP (2 + Spell Level).' }, { name: 'Preserve Life', description: 'Channel Divinity to heal injured creatures up to half HP.' }, { name: 'Life Domain Spells', description: 'Always prepared healing spells.' }] } }, 
-    { name: 'Light Domain', description: 'Wield searing, warding light.', features: { 3: [{ name: 'Warding Flare', description: 'Reaction to impose Disadvantage on an attack against you.' }, { name: 'Radiance of the Dawn', description: 'Channel Divinity to deal Radiant damage to foes within 30ft.' }, { name: 'Light Domain Spells', description: 'Always prepared fire/light spells.' }] } }, 
-    { name: 'Trickery Domain', description: 'Bedevil foes with mischief.', features: { 3: [{ name: 'Blessing of the Trickster', description: 'Grant Advantage on Stealth checks to another creature.' }, { name: 'Invoke Duplicity', description: 'Channel Divinity to create illusion. Cast spells from it. Advantage on attacks vs foes near it.' }, { name: 'Trickery Domain Spells', description: 'Always prepared deception spells.' }] } }, 
-    { name: 'War Domain', description: 'Inspire valor and chastise foes.', features: { 3: [{ name: 'War Priest', description: 'Make a weapon attack as a Bonus Action (WIS mod times).' }, { name: 'Guided Strike', description: 'Channel Divinity to add +10 to an attack roll.' }, { name: 'War Domain Spells', description: 'Always prepared combat spells.' }] } }
+    { 
+        name: 'Life Domain', 
+        description: 'Soothe the hurts of the world.', 
+        features: { 
+            3: [{ name: 'Disciple of Life', description: 'Healing spells cure extra HP (2 + Spell Level).' }, { name: 'Preserve Life', description: 'Channel Divinity to heal injured creatures up to half HP.' }, { name: 'Life Domain Spells', description: 'Always prepared healing spells (e.g. Cure Wounds, Revivify).' }],
+            6: [{ name: 'Blessed Healer', description: 'When you heal others, you also heal yourself.' }],
+            17: [{ name: 'Supreme Healing', description: 'Maximize dice rolls for healing.' }]
+        } 
+    },
+    { 
+        name: 'Light Domain', 
+        description: 'Bring light to banish darkness.', 
+        features: { 
+            3: [{ name: 'Light Domain Spells', description: 'Always prepared fire/light spells (e.g. Fireball, Daylight).' }, { name: 'Radiance of the Dawn', description: 'Channel Divinity to deal Radiant damage to foes within 30ft.' }, { name: 'Warding Flare', description: 'Reaction to impose Disadvantage on an attack against you.' }],
+            6: [{ name: 'Improved Warding Flare', description: 'Use Warding Flare to protect allies.' }],
+            17: [{ name: 'Corona of Light', description: 'Emit sunlight. Enemies have disadvantage on saves vs Fire/Radiant.' }]
+        } 
+    },
+    { 
+        name: 'Trickery Domain', 
+        description: 'Make mischief and challenge authority.', 
+        features: { 
+            3: [{ name: 'Blessing of the Trickster', description: 'Grant Advantage on Stealth checks to another creature.' }, { name: 'Invoke Duplicity', description: 'Channel Divinity to create illusion. Cast spells from it. Advantage on attacks vs foes near it.' }, { name: 'Trickery Domain Spells', description: 'Always prepared deception spells (e.g. Invisibility, Polymorph).' }],
+            6: [{ name: 'Trickster\'s Transposition', description: 'Teleport to swap places with your illusion.' }],
+            17: [{ name: 'Improved Duplicity', description: 'Illusion grants allies advantage. Illusion heals when it ends.' }]
+        } 
+    },
+    { 
+        name: 'War Domain', 
+        description: 'Inspire valor and smite foes.', 
+        features: { 
+            3: [{ name: 'War Priest', description: 'Make a weapon attack as a Bonus Action (WIS mod times).' }, { name: 'Guided Strike', description: 'Channel Divinity to add +10 to an attack roll.' }, { name: 'War Domain Spells', description: 'Always prepared combat spells (e.g. Spiritual Weapon, Spirit Guardians).' }],
+            6: [{ name: 'War God\'s Blessing', description: 'Cast Shield of Faith or Spiritual Weapon using Channel Divinity.' }],
+            17: [{ name: 'Avatar of Battle', description: 'Resistance to Bludgeoning, Piercing, and Slashing damage.' }]
+        } 
+    }
   ],
   'Druid': [
-    { name: 'Circle of the Land', description: 'Draw on the magic of the environment.', features: { 3: [{ name: 'Circle of the Land Spells', description: 'Always prepared spells based on chosen land type (Arid, Polar, Temperate, Tropical).' }, { name: 'Land\'s Aid', description: 'Expend Wild Shape to deal Necrotic damage and heal in an area.' }] } }, 
-    { name: 'Circle of the Moon', description: 'Adopt powerful animal forms.', features: { 3: [{ name: 'Circle Forms', description: 'Combat Wild Shape as Bonus Action. AC 13+Wis. Temp HP = 3*Level.' }, { name: 'Circle of the Moon Spells', description: 'Always prepared moon spells. Cast them while Wild Shaped.' }] } }, 
-    { name: 'Circle of the Sea', description: 'Channel tides and storms.', features: { 3: [{ name: 'Wrath of the Sea', description: 'Expend Wild Shape to emanate storm spray (Cold Dmg + Push).' }, { name: 'Circle of the Sea Spells', description: 'Always prepared water/storm spells.' }] } }, 
-    { name: 'Circle of the Stars', description: 'Gain powers in a starry form.', features: { 3: [{ name: 'Starry Form', description: 'Expend Wild Shape to enter Archer (Bonus Attack), Chalice (Heal), or Dragon (Concentration) form.' }, { name: 'Star Map', description: 'Guidance/Guiding Bolt prepared.' }] } }
+    { 
+        name: 'Circle of the Land', 
+        description: 'Celebrate connection to the natural world.', 
+        features: { 
+            3: [{ name: 'Circle of the Land Spells', description: 'Always prepared spells based on chosen land type (Arid, Polar, Temperate, Tropical).' }, { name: 'Land\'s Aid', description: 'Expend Wild Shape to deal Necrotic damage and heal in an area.' }],
+            6: [{ name: 'Natural Recovery', description: 'Recover spell slots on Short Rest. Free casting of Circle Spell.' }],
+            10: [{ name: 'Nature\'s Ward', description: 'Immunity to Poison. Resistance to damage type of your land.' }],
+            14: [{ name: 'Nature\'s Sanctuary', description: 'Create spectral trees/vines. Half cover and resistance for allies.' }]
+        } 
+    },
+    { 
+        name: 'Circle of the Moon', 
+        description: 'Adopt animal forms to guard the wilds.', 
+        features: { 
+            3: [{ name: 'Circle Forms', description: 'Combat Wild Shape as Bonus Action. AC 13+Wis. Temp HP = 3*Level.' }, { name: 'Circle of the Moon Spells', description: 'Always prepared moon spells (e.g. Moonbeam).' }],
+            6: [{ name: 'Improved Circle Forms', description: 'Attacks deal Radiant damage. Add Wis to Con saves.' }],
+            10: [{ name: 'Moonlight Step', description: 'Bonus Action teleport.' }],
+            14: [{ name: 'Lunar Form', description: 'Extra Radiant damage. Teleport allies with Moonlight Step.' }]
+        } 
+    },
+    { 
+        name: 'Circle of the Sea', 
+        description: 'Become one with tides and storms.', 
+        features: { 
+            3: [{ name: 'Circle of the Sea Spells', description: 'Always prepared storm/water spells (e.g. Shatter, Lightning Bolt).' }, { name: 'Wrath of the Sea', description: 'Expend Wild Shape to emanate storm spray (Cold Dmg + Push).' }],
+            6: [{ name: 'Aquatic Affinity', description: 'Swim Speed. Emanation range increases.' }],
+            10: [{ name: 'Stormborn', description: 'Fly Speed. Resistance to Cold, Lightning, Thunder.' }],
+            14: [{ name: 'Oceanic Gift', description: 'Manifest emanation around an ally.' }]
+        } 
+    },
+    { 
+        name: 'Circle of the Stars', 
+        description: 'Harness secrets hidden in constellations.', 
+        features: { 
+            3: [{ name: 'Star Map', description: 'Guidance/Guiding Bolt prepared. Free Guiding Bolts.' }, { name: 'Starry Form', description: 'Expend Wild Shape to enter Archer (Bonus Attack), Chalice (Heal), or Dragon (Concentration) form.' }],
+            6: [{ name: 'Cosmic Omen', description: 'Roll d6 after Long Rest. Weal (add d6) or Woe (subtract d6) reaction.' }],
+            10: [{ name: 'Twinkling Constellations', description: 'Forms improve (2d8 damage/healing, Fly Speed).' }],
+            14: [{ name: 'Full of Stars', description: 'Resistance to Bludgeoning, Piercing, and Slashing damage.' }]
+        } 
+    }
   ],
   'Fighter': [
-    { name: 'Battle Master', description: 'Use special combat maneuvers.', features: { 3: [{ name: 'Combat Superiority', description: 'Gain Superiority Dice (d8) and Maneuvers (e.g., Trip Attack, Parry).' }, { name: 'Student of War', description: 'Proficiency with one Artisan Tool and one Skill.' }] } }, 
-    { name: 'Champion', description: 'Strive for peak combat prowess.', features: { 3: [{ name: 'Improved Critical', description: 'Your weapon attacks score a critical hit on a roll of 19 or 20.' }, { name: 'Remarkable Athlete', description: 'Advantage on Initiative and Athletics. Crit hits allow movement.' }] } }, 
-    { name: 'Eldritch Knight', description: 'Learn spells to aid in combat.', features: { 3: [{ name: 'Spellcasting', description: 'Cast Wizard spells (Level 1+).' }, { name: 'War Bond', description: 'Bond with 2 weapons, summon them as Bonus Action.' }] } }, 
-    { name: 'Psi Warrior', description: 'Augment attacks with psionic power.', features: { 3: [{ name: 'Psionic Power', description: 'Psionic Energy Dice (d6). Protective Field (reduce dmg), Psionic Strike (extra dmg), Telekinetic Movement.' }] } }
+    { 
+        name: 'Battle Master', 
+        description: 'Master sophisticated battle maneuvers.', 
+        features: { 
+            3: [{ name: 'Combat Superiority', description: 'Gain Superiority Dice (d8) and Maneuvers (e.g., Trip Attack, Parry).' }, { name: 'Student of War', description: 'Proficiency with one Artisan Tool and one Skill.' }],
+            7: [{ name: 'Know Your Enemy', description: 'Learn immunities, resistances, or vulnerabilities of a target.' }],
+            10: [{ name: 'Improved Combat Superiority', description: 'Superiority Dice become d10s.' }],
+            15: [{ name: 'Relentless', description: 'Use a free d8 instead of expending a die once per turn.' }],
+            18: [{ name: 'Ultimate Combat Superiority', description: 'Superiority Dice become d12s.' }]
+        } 
+    },
+    { 
+        name: 'Champion', 
+        description: 'Pursue physical excellence in combat.', 
+        features: { 
+            3: [{ name: 'Improved Critical', description: 'Your weapon attacks score a critical hit on a roll of 19 or 20.' }, { name: 'Remarkable Athlete', description: 'Advantage on Initiative and Athletics. Crit hits allow movement.' }],
+            7: [{ name: 'Additional Fighting Style', description: 'Choose a second Fighting Style.' }],
+            10: [{ name: 'Heroic Warrior', description: 'Gain Heroic Inspiration at start of turn.' }],
+            15: [{ name: 'Superior Critical', description: 'Critical hit on 18-20.' }],
+            18: [{ name: 'Survivor', description: 'Advantage on Death Saves. Regain HP each turn if bloodied.' }]
+        } 
+    },
+    { 
+        name: 'Eldritch Knight', 
+        description: 'Support combat skills with arcane magic.', 
+        features: { 
+            3: [{ name: 'Spellcasting', description: 'Cast Wizard spells (Level 1+).' }, { name: 'War Bond', description: 'Bond with 2 weapons, summon them as Bonus Action.' }],
+            7: [{ name: 'War Magic', description: 'Replace one attack with a Cantrip.' }],
+            10: [{ name: 'Eldritch Strike', description: 'Hit imposes Disadvantage on next save against your spell.' }],
+            15: [{ name: 'Arcane Charge', description: 'Teleport when using Action Surge.' }],
+            18: [{ name: 'Improved War Magic', description: 'Replace two attacks with a Level 1 or 2 Spell.' }]
+        } 
+    },
+    { 
+        name: 'Psi Warrior', 
+        description: 'Augment physical might with psionic power.', 
+        features: { 
+            3: [{ name: 'Psionic Power', description: 'Psionic Energy Dice (d6). Protective Field (reduce dmg), Psionic Strike (extra dmg), Telekinetic Movement.' }],
+            7: [{ name: 'Telekinetic Adept', description: 'Psi-Powered Leap (Fly Speed). Telekinetic Thrust (Prone/Move).' }],
+            10: [{ name: 'Guarded Mind', description: 'Resistance to Psychic. End Charmed/Frightened.' }],
+            15: [{ name: 'Bulwark of Force', description: 'Grant Half Cover to allies.' }],
+            18: [{ name: 'Telekinetic Master', description: 'Cast Telekinesis. Make attacks while concentrating.' }]
+        } 
+    }
   ],
   'Monk': [
-    { name: 'Warrior of Mercy', description: 'Heal or harm with a touch.', features: { 3: [{ name: 'Hand of Harm', description: 'Expend Focus to deal extra Necrotic damage.' }, { name: 'Hand of Healing', description: 'Expend Focus to heal creature. Can replace Flurry attack.' }, { name: 'Implements of Mercy', description: 'Proficiency in Insight, Medicine, Herbalism Kit.' }] } }, 
-    { name: 'Warrior of Shadow', description: 'Employ shadows for subterfuge.', features: { 3: [{ name: 'Shadow Arts', description: 'Expend Focus to cast Darkness. Gain Darkvision (or upgrade it). Know Minor Illusion.' }] } }, 
-    { name: 'Warrior of the Elements', description: 'Wield elemental power.', features: { 3: [{ name: 'Elemental Attunement', description: 'Expend Focus for +10ft Reach and Elemental damage/push/pull.' }, { name: 'Manipulate Elements', description: 'Know Elementalism spell.' }] } }, 
-    { name: 'Warrior of the Open Hand', description: 'Master unarmed combat.', features: { 3: [{ name: 'Open Hand Technique', description: 'Flurry of Blows adds Addle (No Reactions), Push (15ft), or Topple (Prone).' }] } }
+    { 
+        name: 'Warrior of Mercy', 
+        description: 'Manipulate forces of life and death.', 
+        features: { 
+            3: [{ name: 'Hand of Harm', description: 'Expend Focus to deal extra Necrotic damage.' }, { name: 'Hand of Healing', description: 'Expend Focus to heal creature. Can replace Flurry attack.' }, { name: 'Implements of Mercy', description: 'Proficiency in Insight, Medicine, Herbalism Kit.' }],
+            6: [{ name: 'Physician\'s Touch', description: 'Harm poisons target. Healing cures conditions.' }],
+            11: [{ name: 'Flurry of Healing and Harm', description: 'Free Hand of Healing/Harm with Flurry of Blows.' }],
+            17: [{ name: 'Hand of Ultimate Mercy', description: 'Resurrect a creature.' }]
+        } 
+    },
+    { 
+        name: 'Warrior of Shadow', 
+        description: 'Harness shadow power for stealth and subterfuge.', 
+        features: { 
+            3: [{ name: 'Shadow Arts', description: 'Expend Focus to cast Darkness. Gain Darkvision (or upgrade it). Know Minor Illusion.' }],
+            6: [{ name: 'Shadow Step', description: 'Bonus Action teleport between shadows. Advantage on next attack.' }],
+            11: [{ name: 'Improved Shadow Step', description: 'Free Shadow Step. Attack after teleporting.' }],
+            17: [{ name: 'Cloak of Shadows', description: 'Invisibility and phasing through objects.' }]
+        } 
+    },
+    { 
+        name: 'Warrior of the Elements', 
+        description: 'Wield strikes and bursts of elemental power.', 
+        features: { 
+            3: [{ name: 'Elemental Attunement', description: 'Expend Focus for +10ft Reach and Elemental damage/push/pull.' }, { name: 'Manipulate Elements', description: 'Know Elementalism spell.' }],
+            6: [{ name: 'Elemental Burst', description: 'AoE elemental damage explosion.' }],
+            11: [{ name: 'Stride of the Elements', description: 'Fly and Swim speeds equal to Speed.' }],
+            17: [{ name: 'Elemental Epitome', description: 'Resistance, Speed boost, Extra damage.' }]
+        } 
+    },
+    { 
+        name: 'Warrior of the Open Hand', 
+        description: 'Master unarmed combat techniques.', 
+        features: { 
+            3: [{ name: 'Open Hand Technique', description: 'Flurry of Blows adds Addle (No Reactions), Push (15ft), or Topple (Prone).' }],
+            6: [{ name: 'Wholeness of Body', description: 'Bonus Action heal.' }],
+            11: [{ name: 'Fleet Step', description: 'Free Step of the Wind after other Bonus Actions.' }],
+            17: [{ name: 'Quivering Palm', description: 'Set up lethal vibrations. End for 10d12 Force damage.' }]
+        } 
+    }
   ],
   'Paladin': [
-    { name: 'Oath of Devotion', description: 'Emulate the angels of justice.', features: { 3: [{ name: 'Sacred Weapon', description: 'Channel Divinity to add CHA mod to attack rolls and deal Radiant damage.' }, { name: 'Oath Spells', description: 'Always prepared protection/holy spells.' }] } }, 
-    { name: 'Oath of Glory', description: 'Reach the heights of heroism.', features: { 3: [{ name: 'Peerless Athlete', description: 'Channel Divinity for Adv on Athletics/Acrobatics and jump bonus.' }, { name: 'Inspiring Smite', description: 'Divine Smite triggers Temp HP distribution.' }, { name: 'Oath Spells', description: 'Always prepared glory spells.' }] } }, 
-    { name: 'Oath of the Ancients', description: 'Preserve life, joy, and nature.', features: { 3: [{ name: 'Nature\'s Wrath', description: 'Channel Divinity to restrain foes with spectral vines.' }, { name: 'Oath Spells', description: 'Always prepared nature spells.' }] } }, 
-    { name: 'Oath of Vengeance', description: 'Hunt down evildoers.', features: { 3: [{ name: 'Vow of Enmity', description: 'Channel Divinity to gain Advantage on attacks against one creature.' }, { name: 'Oath Spells', description: 'Always prepared hunting/combat spells.' }] } }
+    { 
+        name: 'Oath of Devotion', 
+        description: 'Uphold the ideals of justice and order.', 
+        features: { 
+            3: [{ name: 'Sacred Weapon', description: 'Channel Divinity to add CHA mod to attack rolls and deal Radiant damage.' }, { name: 'Oath of Devotion Spells', description: 'Always prepared protection/holy spells.' }],
+            7: [{ name: 'Aura of Devotion', description: 'Immunity to Charm for you and allies.' }],
+            15: [{ name: 'Smite of Protection', description: 'Divine Smite grants Half Cover.' }],
+            20: [{ name: 'Holy Nimbus', description: 'Radiant damage aura. Advantage on saves vs Fiends/Undead.' }]
+        } 
+    },
+    { 
+        name: 'Oath of Glory', 
+        description: 'Strive for the heights of heroism.', 
+        features: { 
+            3: [{ name: 'Peerless Athlete', description: 'Channel Divinity for Adv on Athletics/Acrobatics and jump bonus.' }, { name: 'Inspiring Smite', description: 'Divine Smite triggers Temp HP distribution.' }, { name: 'Oath of Glory Spells', description: 'Always prepared glory spells.' }],
+            7: [{ name: 'Aura of Alacrity', description: 'Speed increase for you and allies.' }],
+            15: [{ name: 'Glorious Defense', description: 'Reaction to boost AC and counterattack.' }],
+            20: [{ name: 'Living Legend', description: 'Advantage on Cha checks. Reroll saves. Unerring strikes.' }]
+        } 
+    },
+    { 
+        name: 'Oath of the Ancients', 
+        description: 'Preserve life and light in the world.', 
+        features: { 
+            3: [{ name: 'Nature\'s Wrath', description: 'Channel Divinity to restrain foes with spectral vines.' }, { name: 'Oath of the Ancients Spells', description: 'Always prepared nature spells.' }],
+            7: [{ name: 'Aura of Warding', description: 'Resistance to Necrotic, Psychic, and Radiant damage.' }],
+            15: [{ name: 'Undying Sentinel', description: 'Drop to 1 HP instead of 0. Ignore aging.' }],
+            20: [{ name: 'Elder Champion', description: 'Bonus Action spells. Enemy disadvantage. Regen.' }]
+        } 
+    },
+    { 
+        name: 'Oath of Vengeance', 
+        description: 'Punish evildoers at any cost.', 
+        features: { 
+            3: [{ name: 'Vow of Enmity', description: 'Channel Divinity to gain Advantage on attacks against one creature.' }, { name: 'Oath of Vengeance Spells', description: 'Always prepared hunting/combat spells.' }],
+            7: [{ name: 'Relentless Avenger', description: 'Move after opportunity attack.' }],
+            15: [{ name: 'Soul of Vengeance', description: 'Reaction attack when vowed enemy attacks.' }],
+            20: [{ name: 'Avenging Angel', description: 'Flight. Frightful Aura.' }]
+        } 
+    }
   ],
   'Ranger': [
-    { name: 'Beast Master', description: 'Bond with a primal beast.', features: { 3: [{ name: 'Primal Companion', description: 'Summon a Beast of the Land, Air, or Sea. Friendly, obeys commands, acts on your turn.' }] } }, 
-    { name: 'Fey Wanderer', description: 'Manifest fey mirth and fury.', features: { 3: [{ name: 'Dreadful Strikes', description: 'Deal extra psychic damage once per turn.' }, { name: 'Otherworldly Glamour', description: 'Add WIS mod to Charisma checks. Gain social skill.' }, { name: 'Fey Wanderer Spells', description: 'Always prepared fey spells.' }] } }, 
-    { name: 'Gloom Stalker', description: 'Hunt foes that lurk in darkness.', features: { 3: [{ name: 'Dread Ambusher', description: 'Add WIS to Initiative. First turn: +10ft speed, extra attack + 2d6 Psychic dmg.' }, { name: 'Umbral Sight', description: 'Darkvision 60ft. Invisible to Darkvision.' }, { name: 'Gloom Stalker Spells', description: 'Always prepared stealth/fear spells.' }] } }, 
-    { name: 'Hunter', description: 'Protect nature with martial versatility.', features: { 3: [{ name: 'Hunter\'s Prey', description: 'Choose Colossus Slayer (hurt foes) or Horde Breaker (extra attack vs adjacent).' }, { name: 'Hunter\'s Lore', description: 'Know Immunities/Resistances/Vulnerabilities of Hunter\'s Mark target.' }] } }
+    { 
+        name: 'Beast Master', 
+        description: 'Bond with a primal beast.', 
+        features: { 
+            3: [{ name: 'Primal Companion', description: 'Summon a Beast of the Land, Air, or Sea. Friendly, obeys commands, acts on your turn.' }],
+            7: [{ name: 'Exceptional Training', description: 'Beast can Dash/Disengage/Dodge/Help as Bonus Action. Attacks deal Force/Type dmg.' }],
+            11: [{ name: 'Bestial Fury', description: 'Beast attacks twice. Hunter\'s Mark benefit.' }],
+            15: [{ name: 'Share Spells', description: 'Spells targeting you also affect beast.' }]
+        } 
+    },
+    { 
+        name: 'Fey Wanderer', 
+        description: 'Wield fey mirth and fury.', 
+        features: { 
+            3: [{ name: 'Dreadful Strikes', description: 'Deal extra psychic damage once per turn.' }, { name: 'Otherworldly Glamour', description: 'Add WIS mod to Charisma checks. Gain social skill.' }, { name: 'Fey Wanderer Spells', description: 'Always prepared fey spells.' }],
+            7: [{ name: 'Beguiling Twist', description: 'Reaction to Charm/Frighten when a creature succeeds a save.' }],
+            11: [{ name: 'Fey Reinforcements', description: 'Summon Fey without concentration or components.' }],
+            15: [{ name: 'Misty Wanderer', description: 'Misty Step brings an ally.' }]
+        } 
+    },
+    { 
+        name: 'Gloom Stalker', 
+        description: 'Draw on shadow magic to fight your foes.', 
+        features: { 
+            3: [{ name: 'Dread Ambusher', description: 'Add WIS to Initiative. First turn: +10ft speed, extra attack + 2d6 Psychic dmg.' }, { name: 'Umbral Sight', description: 'Darkvision 60ft. Invisible to Darkvision.' }, { name: 'Gloom Stalker Spells', description: 'Always prepared stealth/fear spells.' }],
+            7: [{ name: 'Iron Mind', description: 'Proficiency in Wisdom (or Int/Cha) saves.' }],
+            11: [{ name: 'Stalker\'s Flurry', description: 'Miss causes extra attack or Fear.' }],
+            15: [{ name: 'Shadowy Dodge', description: 'Reaction to impose Disadvantage on attack.' }]
+        } 
+    },
+    { 
+        name: 'Hunter', 
+        description: 'Protect nature and people from destruction.', 
+        features: { 
+            3: [{ name: 'Hunter\'s Prey', description: 'Choose Colossus Slayer (hurt foes) or Horde Breaker (extra attack vs adjacent).' }, { name: 'Hunter\'s Lore', description: 'Know Immunities/Resistances/Vulnerabilities of Hunter\'s Mark target.' }],
+            7: [{ name: 'Defensive Tactics', description: 'Choose Escape the Horde (OA Disadvantage) or Multiattack Defense.' }],
+            11: [{ name: 'Superior Hunter\'s Prey', description: 'Hunter\'s Mark damage splashes to second target.' }],
+            15: [{ name: 'Superior Hunter\'s Defense', description: 'Reaction Resistance to damage.' }]
+        } 
+    }
   ],
   'Rogue': [
-    { name: 'Arcane Trickster', description: 'Enhance stealth with spells.', features: { 3: [{ name: 'Spellcasting', description: 'Cast Wizard spells.' }, { name: 'Mage Hand Legerdemain', description: 'Invisible Mage Hand, Bonus Action control, Sleight of Hand.' }] } }, 
-    { name: 'Assassin', description: 'Deliver ambushes and poison.', features: { 3: [{ name: 'Assassinate', description: 'Advantage on Initiative. Adv vs creatures who haven\'t acted. Sneak Attack adds Rogue Level dmg in first round.' }, { name: 'Assassin\'s Tools', description: 'Disguise Kit and Poisoner\'s Kit proficiency.' }] } }, 
-    { name: 'Soulknife', description: 'Strike foes with psi blades.', features: { 3: [{ name: 'Psychic Blades', description: 'Manifest blades (Finesse/Thrown) to attack. 1d6/1d4 Psychic damage.' }, { name: 'Psionic Power', description: 'Energy Dice (d6). Psi-Bolstered Knack (add to failed checks), Psychic Whispers (telepathy).' }] } }, 
-    { name: 'Thief', description: 'Master infiltration and treasure hunting.', features: { 3: [{ name: 'Fast Hands', description: 'Use Cunning Action for Sleight of Hand, Thieves Tools, or Use an Object.' }, { name: 'Second-Story Work', description: 'Climb speed equals walk speed. Jump with Dex.' }] } }
+    { 
+        name: 'Arcane Trickster', 
+        description: 'Enhance stealth with arcane spells.', 
+        features: { 
+            3: [{ name: 'Spellcasting', description: 'Cast Wizard spells.' }, { name: 'Mage Hand Legerdemain', description: 'Invisible Mage Hand, Bonus Action control, Sleight of Hand.' }],
+            9: [{ name: 'Magical Ambush', description: 'Disadvantage on saves vs your spells if you are hidden.' }],
+            13: [{ name: 'Versatile Trickster', description: 'Mage Hand distracts targets.' }],
+            17: [{ name: 'Spell Thief', description: 'Reaction to negate and steal a spell.' }]
+        } 
+    },
+    { 
+        name: 'Assassin', 
+        description: 'Practice the grim art of death.', 
+        features: { 
+            3: [{ name: 'Assassinate', description: 'Advantage on Initiative. Adv vs creatures who haven\'t acted. Sneak Attack adds Rogue Level dmg in first round.' }, { name: 'Assassin\'s Tools', description: 'Disguise Kit and Poisoner\'s Kit proficiency.' }],
+            9: [{ name: 'Infiltration Expertise', description: 'Mimicry. Speed not reduced by Steady Aim.' }],
+            13: [{ name: 'Envenom Weapons', description: 'Poison ignores resistance. Deal damage on failed save.' }],
+            17: [{ name: 'Death Strike', description: 'Double damage on first round hit.' }]
+        } 
+    },
+    { 
+        name: 'Soulknife', 
+        description: 'Strike foes with psionic blades.', 
+        features: { 
+            3: [{ name: 'Psychic Blades', description: 'Manifest blades (Finesse/Thrown) to attack. 1d6/1d4 Psychic damage.' }, { name: 'Psionic Power', description: 'Energy Dice (d6). Psi-Bolstered Knack (add to failed checks), Psychic Whispers (telepathy).' }],
+            9: [{ name: 'Soul Blades', description: 'Homing Strikes (add die to hit). Psychic Teleportation.' }],
+            13: [{ name: 'Psychic Veil', description: 'Invisibility.' }],
+            17: [{ name: 'Rend Mind', description: 'Stun target with Sneak Attack.' }]
+        } 
+    },
+    { 
+        name: 'Thief', 
+        description: 'Hunt for treasure as a classic adventurer.', 
+        features: { 
+            3: [{ name: 'Fast Hands', description: 'Use Cunning Action for Sleight of Hand, Thieves Tools, or Use an Object.' }, { name: 'Second-Story Work', description: 'Climb speed equals walk speed. Jump with Dex.' }],
+            9: [{ name: 'Supreme Sneak', description: 'Stealth Attack (Cunning Strike): Attack from Hiding without breaking invisibility.' }],
+            13: [{ name: 'Use Magic Device', description: 'Attune to 4 items. Use scrolls. Charge saving.' }],
+            17: [{ name: 'Thief\'s Reflexes', description: 'Two turns in the first round of combat.' }]
+        } 
+    }
   ],
   'Sorcerer': [
-    { name: 'Aberrant Sorcery', description: 'Use strange psionic magic.', features: { 3: [{ name: 'Psionic Spells', description: 'Learn Mind Sliver and other psionic spells.' }, { name: 'Telepathic Speech', description: 'Bonus Action to connect telepathically with a creature.' }] } }, 
-    { name: 'Clockwork Sorcery', description: 'Harness cosmic forces of order.', features: { 3: [{ name: 'Clockwork Spells', description: 'Learn order-based spells.' }, { name: 'Restore Balance', description: 'Reaction to neutralize Advantage/Disadvantage.' }] } }, 
-    { name: 'Draconic Sorcery', description: 'Breathe the magic of dragons.', features: { 3: [{ name: 'Draconic Resilience', description: 'AC is 10 + DEX + CHA. HP increases by 3 + Level.' }, { name: 'Draconic Spells', description: 'Learn dragon-themed spells.' }] } }, 
-    { name: 'Wild Magic Sorcery', description: 'Unleash chaos magic.', features: { 3: [{ name: 'Wild Magic Surge', description: 'Roll d20 on spell cast. 20 triggers random magical effect.' }, { name: 'Tides of Chaos', description: 'Gain Advantage on one D20 Test. Next spell triggers Surge.' }] } }
+    { 
+        name: 'Aberrant Sorcery', 
+        description: 'Wield unnatural psionic power.', 
+        features: { 
+            3: [{ name: 'Psionic Spells', description: 'Learn Mind Sliver and other psionic spells.' }, { name: 'Telepathic Speech', description: 'Bonus Action to connect telepathically with a creature.' }],
+            6: [{ name: 'Psionic Sorcery', description: 'Cast psionic spells with Sorcery Points (Subtle).' }, { name: 'Psychic Defenses', description: 'Resistance to Psychic. Adv vs Charm/Frighten.' }],
+            14: [{ name: 'Revelation in Flesh', description: 'Spend point for Flight, Swim, See Invis, or Squeeze.' }],
+            18: [{ name: 'Warping Implosion', description: 'Teleport and damage/pull enemies.' }]
+        } 
+    },
+    { 
+        name: 'Clockwork Sorcery', 
+        description: 'Channel cosmic forces of order.', 
+        features: { 
+            3: [{ name: 'Clockwork Spells', description: 'Learn order-based spells.' }, { name: 'Restore Balance', description: 'Reaction to neutralize Advantage/Disadvantage.' }],
+            6: [{ name: 'Bastion of Law', description: 'Spend points to create damage-reducing ward.' }],
+            14: [{ name: 'Trance of Order', description: 'Reliable Talent for attacks/saves. No Advantage against you.' }],
+            18: [{ name: 'Clockwork Cavalcade', description: 'Heal, Repair, and Dispel in a cube.' }]
+        } 
+    },
+    { 
+        name: 'Draconic Sorcery', 
+        description: 'Breathe the magic of dragons.', 
+        features: { 
+            3: [{ name: 'Draconic Resilience', description: 'AC is 10 + DEX + CHA. HP increases by 3 + Level.' }, { name: 'Draconic Spells', description: 'Learn dragon-themed spells.' }],
+            6: [{ name: 'Elemental Affinity', description: 'Resistance to damage type. Add CHA to damage.' }],
+            14: [{ name: 'Dragon Wings', description: 'Fly Speed.' }],
+            18: [{ name: 'Dragon Companion', description: 'Summon Dragon without concentration.' }]
+        } 
+    },
+    { 
+        name: 'Wild Magic Sorcery', 
+        description: 'Unleash chaotic magic.', 
+        features: { 
+            3: [{ name: 'Wild Magic Surge', description: 'Roll d20 on spell cast. 20 triggers random magical effect.' }, { name: 'Tides of Chaos', description: 'Gain Advantage on one D20 Test. Next spell triggers Surge.' }],
+            6: [{ name: 'Bend Luck', description: 'Spend points to add/subtract d4 from a roll.' }],
+            14: [{ name: 'Controlled Chaos', description: 'Roll twice on surge table.' }],
+            18: [{ name: 'Tamed Surge', description: 'Choose effect from surge table.' }]
+        } 
+    }
   ],
   'Warlock': [
-    { name: 'Archfey Patron', description: 'Teleport and wield fey magic.', features: { 3: [{ name: 'Steps of the Fey', description: 'Cast Misty Step without slot (CHA mod/day). Add effect: Refresh (Temp HP) or Taunt.' }, { name: 'Archfey Spells', description: 'Always prepared fey spells.' }] } }, 
-    { name: 'Celestial Patron', description: 'Heal with heavenly magic.', features: { 3: [{ name: 'Healing Light', description: 'Pool of d6s (1+Level) to heal as Bonus Action.' }, { name: 'Celestial Spells', description: 'Always prepared holy spells.' }] } }, 
-    { name: 'Fiend Patron', description: 'Call on sinister powers.', features: { 3: [{ name: 'Dark One\'s Blessing', description: 'Gain Temp HP (CHA + Level) when you reduce a hostile creature to 0 HP.' }, { name: 'Fiend Spells', description: 'Always prepared fire/destructive spells.' }] } }, 
-    { name: 'Great Old One Patron', description: 'Delve into forbidden lore.', features: { 3: [{ name: 'Awakened Mind', description: 'Telepathic communication.' }, { name: 'Psychic Spells', description: 'Change dmg to Psychic. No V/S for Enchantment/Illusion.' }, { name: 'Great Old One Spells', description: 'Always prepared psychic spells.' }] } }
+    { 
+        name: 'Archfey Patron', 
+        description: 'Bargain with whimsical Fey.', 
+        features: { 
+            3: [{ name: 'Steps of the Fey', description: 'Cast Misty Step without slot (CHA mod/day). Add effect: Refresh (Temp HP) or Taunt.' }, { name: 'Archfey Spells', description: 'Always prepared fey spells.' }],
+            6: [{ name: 'Misty Escape', description: 'Cast Misty Step as Reaction to damage. Vanish or Dreadful Step.' }],
+            10: [{ name: 'Beguiling Defenses', description: 'Immunity to Charm. Reaction to reflect damage/charm.' }],
+            14: [{ name: 'Bewitching Magic', description: 'Free Misty Step after Enchantment/Illusion spell.' }]
+        } 
+    },
+    { 
+        name: 'Celestial Patron', 
+        description: 'Call on the power of the Heavens.', 
+        features: { 
+            3: [{ name: 'Healing Light', description: 'Pool of d6s (1+Level) to heal as Bonus Action.' }, { name: 'Celestial Spells', description: 'Always prepared holy spells.' }],
+            6: [{ name: 'Radiant Soul', description: 'Resistance to Radiant. Add CHA to Radiant/Fire damage.' }],
+            10: [{ name: 'Celestial Resilience', description: 'Gain Temp HP on rest or Magical Cunning.' }],
+            14: [{ name: 'Searing Vengeance', description: 'Resist death, heal, and blind enemies.' }]
+        } 
+    },
+    { 
+        name: 'Fiend Patron', 
+        description: 'Make a deal with the Lower Planes.', 
+        features: { 
+            3: [{ name: 'Dark One\'s Blessing', description: 'Gain Temp HP (CHA + Level) when you reduce a hostile creature to 0 HP.' }, { name: 'Fiend Spells', description: 'Always prepared fire/destructive spells.' }],
+            6: [{ name: 'Dark One\'s Own Luck', description: 'Add d10 to a check or save.' }],
+            10: [{ name: 'Fiendish Resilience', description: 'Choose a damage resistance after rest.' }],
+            14: [{ name: 'Hurl Through Hell', description: 'Banish hit creature to nightmare landscape (10d10 damage).' }]
+        } 
+    },
+    { 
+        name: 'Great Old One Patron', 
+        description: 'Unearth forbidden lore of ineffable beings.', 
+        features: { 
+            3: [{ name: 'Awakened Mind', description: 'Telepathic communication.' }, { name: 'Psychic Spells', description: 'Change dmg to Psychic. No V/S for Enchantment/Illusion.' }, { name: 'Great Old One Spells', description: 'Always prepared psychic spells.' }],
+            6: [{ name: 'Clairvoyant Combatant', description: 'Telepathic bond grants Advantage to you/Disadvantage to enemy.' }],
+            10: [{ name: 'Eldritch Hex', description: 'Hex gives disadvantage on saves.' }, { name: 'Thought Shield', description: 'Resist Psychic. Reflect Psychic damage.' }],
+            14: [{ name: 'Create Thrall', description: 'Summon Aberration is improved.' }]
+        } 
+    }
   ],
   'Wizard': [
-    { name: 'Abjurer', description: 'Shield allies and banish foes.', features: { 3: [{ name: 'Arcane Ward', description: 'Create a magical ward that absorbs damage. Recharge with Abjuration spells.' }, { name: 'Abjuration Savant', description: 'Two free Abjuration spells in book.' }] } }, 
-    { name: 'Diviner', description: 'Learn the multiverse\'s secrets.', features: { 3: [{ name: 'Portent', description: 'Roll 2d20 after Long Rest. Replace any roll with these values.' }, { name: 'Divination Savant', description: 'Two free Divination spells in book.' }] } }, 
-    { name: 'Evoker', description: 'Create explosive effects.', features: { 3: [{ name: 'Potent Cantrip', description: 'Cantrips deal half damage on miss/save.' }, { name: 'Evocation Savant', description: 'Two free Evocation spells in book.' }] } }, 
-    { name: 'Illusionist', description: 'Weave spells of deception.', features: { 3: [{ name: 'Improved Illusions', description: 'Illusion spells have no Verbal components and +60ft range. Minor Illusion has sound+image.' }, { name: 'Illusion Savant', description: 'Two free Illusion spells in book.' }] } }
+    { 
+        name: 'Abjurer', 
+        description: 'Shield companions and banish foes.', 
+        features: { 
+            3: [{ name: 'Arcane Ward', description: 'Create a magical ward that absorbs damage. Recharge with Abjuration spells.' }, { name: 'Abjuration Savant', description: 'Two free Abjuration spells in book.' }],
+            6: [{ name: 'Projected Ward', description: 'Reaction to use Arcane Ward on ally.' }],
+            10: [{ name: 'Spell Breaker', description: 'Counterspell/Dispel Magic prepared. Add PB to checks.' }],
+            14: [{ name: 'Spell Resistance', description: 'Advantage on saves vs spells. Resistance to spell damage.' }]
+        } 
+    },
+    { 
+        name: 'Diviner', 
+        description: 'Learn the secrets of the multiverse.', 
+        features: { 
+            3: [{ name: 'Portent', description: 'Roll 2d20 after Long Rest. Replace any roll with these values.' }, { name: 'Divination Savant', description: 'Two free Divination spells in book.' }],
+            6: [{ name: 'Expert Divination', description: 'Regain lower level slot when casting Divination spell.' }],
+            10: [{ name: 'The Third Eye', description: 'Darkvision, See Invisibility, or Read Languages.' }],
+            14: [{ name: 'Greater Portent', description: 'Roll three d20s for Portent.' }]
+        } 
+    },
+    { 
+        name: 'Evoker', 
+        description: 'Create explosive elemental effects.', 
+        features: { 
+            3: [{ name: 'Potent Cantrip', description: 'Cantrips deal half damage on miss/save.' }, { name: 'Evocation Savant', description: 'Two free Evocation spells in book.' }],
+            6: [{ name: 'Sculpt Spells', description: 'Protect allies from your Evocation spells.' }],
+            10: [{ name: 'Empowered Evocation', description: 'Add INT to one damage roll.' }],
+            14: [{ name: 'Overchannel', description: 'Max damage on level 1-5 spell. Take damage on reuse.' }]
+        } 
+    },
+    { 
+        name: 'Illusionist', 
+        description: 'Weave subtle spells of deception.', 
+        features: { 
+            3: [{ name: 'Improved Illusions', description: 'Illusion spells have no Verbal components and +60ft range. Minor Illusion has sound+image.' }, { name: 'Illusion Savant', description: 'Two free Illusion spells in book.' }],
+            6: [{ name: 'Phantasmal Creatures', description: 'Summon spells can be cast as Illusions (Spectral, half HP, flexible).' }],
+            10: [{ name: 'Illusory Self', description: 'Reaction to make attack miss automatically.' }],
+            14: [{ name: 'Illusory Reality', description: 'Make an illusion object real for 1 minute.' }]
+        } 
+    }
   ]
 };
 

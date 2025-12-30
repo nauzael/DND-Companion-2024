@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Character, CreatorStep, Ability, Trait } from '../types';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Character, CreatorStep, Ability, Trait, SubclassData } from '../types';
 import { MAP_TEXTURE, CLASS_UI_MAP, SPECIES_UI_MAP, BACKGROUND_UI_MAP } from '../constants';
 import { 
   CLASS_LIST, 
@@ -28,6 +28,8 @@ const POINT_BUY_COSTS: Record<number, number> = {
   8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9
 };
 
+const DEFAULT_CHAR_IMAGE = "https://lh3.googleusercontent.com/aida-public/AB6AXuAZr-RDRTUNGSsd_-BR5U-r2yLkQsbKsJ6mAkTpEGl0e4IZW86PQSc2se3iegp_aML54kIgoYOyDhlwHDiNPfKasvRE8Wymti23tWDRa-QL1JZUqBNPNDJzOj5AknxSMaVS0FH7GW9srFK1u5uzt7Nb5M5LvPbaZUGy484PX685rHODXkI9CwFaha_RbMGbh-LOIz8R0OqlhyI9CDp--2zy5UhpgJ8GLuhKjmJsjCWKb-F8PJWpJtTk_3AmSP79rbDxmeLWsGsP61hv";
+
 const SectionSeparator = ({ label }: { label: string }) => (
   <div className="relative py-6 flex items-center justify-center w-full px-6">
     <div className="absolute inset-0 flex items-center px-6">
@@ -41,11 +43,93 @@ const SectionSeparator = ({ label }: { label: string }) => (
   </div>
 );
 
+const ClassProgressionList = ({ selectedClass, subclassData, currentLevel }: { selectedClass: string, subclassData?: SubclassData, currentLevel: number }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const classData = CLASS_DETAILS[selectedClass];
+
+    return (
+      <div className="mt-6 space-y-3 px-6">
+        <div className="border border-slate-200 dark:border-white/10 rounded-2xl bg-white dark:bg-surface-dark overflow-hidden transition-all duration-300 shadow-sm">
+            <button 
+              onClick={() => setIsOpen(!isOpen)}
+              className={`w-full flex items-center justify-between p-4 text-left transition-colors ${isOpen ? 'bg-slate-50 dark:bg-white/5' : 'hover:bg-slate-50 dark:hover:bg-white/5'}`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isOpen ? 'bg-primary text-white' : 'bg-primary/10 text-primary'}`}>
+                   <span className="material-symbols-outlined">school</span>
+                </div>
+                <div>
+                   <h3 className="text-base font-bold text-slate-900 dark:text-white">Progresión de Clase</h3>
+                   <p className="text-xs text-slate-500 dark:text-slate-400">Ver niveles 1-20</p>
+                </div>
+              </div>
+              <span className={`material-symbols-outlined text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-primary' : ''}`}>
+                expand_more
+              </span>
+            </button>
+            
+            <div className={`transition-[grid-template-rows] duration-500 ease-in-out grid ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+                <div className="overflow-hidden">
+                    <div className="p-4 pt-2 space-y-0 bg-slate-50/50 dark:bg-black/20 border-t border-slate-100 dark:border-white/5">
+                        {Array.from({ length: 20 }, (_, i) => i + 1).map((lvl) => {
+                            const features: { name: string, desc: string }[] = [];
+                            
+                            // 1. Add Class Features
+                            if (lvl === 1) {
+                               classData?.traits.forEach(t => features.push({ name: t.name, desc: t.description }));
+                            } else {
+                               const classFeats = CLASS_PROGRESSION[selectedClass]?.[lvl] || [];
+                               classFeats.forEach(feat => {
+                                   let desc = GENERIC_FEATURES?.[feat];
+                                   if (!desc && feat.includes("Ability Score")) desc = "Mejora una característica o elige una dote.";
+                                   // Generic fallback or subclass pointer
+                                   if (!desc && feat.includes("Subclass")) desc = "Ganás un rasgo de tu subclase elegida.";
+                                   features.push({ name: feat, desc: desc || "" });
+                               });
+                            }
+
+                            // 2. Add Subclass Features (if selected)
+                            if (subclassData && subclassData.features[lvl]) {
+                                subclassData.features[lvl].forEach(trait => {
+                                    features.push({ name: trait.name, desc: trait.description });
+                                });
+                            }
+                            
+                            if (features.length === 0) return null;
+
+                            return (
+                                <div key={lvl} className="relative pl-6 pb-6 border-l-2 border-slate-200 dark:border-slate-700 ml-2 last:border-0 last:pb-0">
+                                    <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 transition-colors ${lvl <= currentLevel ? 'bg-primary border-primary' : 'bg-background-light dark:bg-background-dark border-slate-300 dark:border-slate-600'}`}></div>
+                                    
+                                    <div className="flex flex-col gap-1 -mt-1.5">
+                                        <span className={`text-xs font-bold uppercase tracking-wider ${lvl <= currentLevel ? 'text-primary' : 'text-slate-400'}`}>Nivel {lvl}</span>
+                                        <div className="space-y-2 mt-1">
+                                            {features.map((feat, idx) => (
+                                                <div key={idx} className={`bg-white dark:bg-surface-dark p-3 rounded-lg border shadow-sm ${lvl <= currentLevel ? 'border-primary/30' : 'border-slate-200 dark:border-white/5'}`}>
+                                                    <span className={`block font-bold text-sm ${lvl <= currentLevel ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>{feat.name}</span>
+                                                    {feat.desc && <span className="block text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{feat.desc}</span>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+    );
+};
+
 const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   const [step, setStep] = useState<CreatorStep>(1);
+  const mainRef = useRef<HTMLDivElement>(null);
   
   // Character State
   const [name, setName] = useState('');
+  const [charImage, setCharImage] = useState(DEFAULT_CHAR_IMAGE);
   const [level, setLevel] = useState<number>(1);
   const [selectedClass, setSelectedClass] = useState(CLASS_LIST[0]);
   const [selectedSubclass, setSelectedSubclass] = useState<string>('');
@@ -87,6 +171,14 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   const remainingPoints = 27 - usedPoints;
 
   // Effects
+  useEffect(() => {
+    // Scroll to top whenever step changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (mainRef.current) {
+        mainRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [step]);
+
   useEffect(() => {
     if (speciesData?.name === 'Human') {
         if (!selectedFeat) setSelectedFeat(FEAT_OPTIONS[0].name);
@@ -212,7 +304,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     languages: ['Common', selectedLanguage1, selectedLanguage2].filter(Boolean),
     feats: [backgroundData?.feat, speciesData?.name === 'Human' ? selectedFeat : undefined].filter((f): f is string => !!f),
     inventory: [generateTrinket(), ...(backgroundData?.equipment || [])],
-    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuAZr-RDRTUNGSsd_-BR5U-r2yLkQsbKsJ6mAkTpEGl0e4IZW86PQSc2se3iegp_aML54kIgoYOyDhlwHDiNPfKasvRE8Wymti23tWDRa-QL1JZUqBNPNDJzOj5AknxSMaVS0FH7GW9srFK1u5uzt7Nb5M5LvPbaZUGy484PX685rHODXkI9CwFaha_RbMGbh-LOIz8R0OqlhyI9CDp--2zy5UhpgJ8GLuhKjmJsjCWKb-F8PJWpJtTk_3AmSP79rbDxmeLWsGsP61hv"
+    imageUrl: charImage
   };
 
   const nextStep = () => {
@@ -236,79 +328,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     </div>
   );
 
-  const ClassProgressionList = ({ selectedClass }: { selectedClass: string }) => {
-    const [isOpen, setIsOpen] = useState(false);
-
-    return (
-      <div className="mt-6 space-y-3 px-6">
-        <div className="border border-slate-200 dark:border-white/10 rounded-2xl bg-white dark:bg-surface-dark overflow-hidden transition-all duration-300 shadow-sm">
-            <button 
-              onClick={() => setIsOpen(!isOpen)}
-              className={`w-full flex items-center justify-between p-4 text-left transition-colors ${isOpen ? 'bg-slate-50 dark:bg-white/5' : 'hover:bg-slate-50 dark:hover:bg-white/5'}`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isOpen ? 'bg-primary text-white' : 'bg-primary/10 text-primary'}`}>
-                   <span className="material-symbols-outlined">school</span>
-                </div>
-                <div>
-                   <h3 className="text-base font-bold text-slate-900 dark:text-white">Progresión de Clase</h3>
-                   <p className="text-xs text-slate-500 dark:text-slate-400">Ver niveles 1-20</p>
-                </div>
-              </div>
-              <span className={`material-symbols-outlined text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-primary' : ''}`}>
-                expand_more
-              </span>
-            </button>
-            
-            <div className={`transition-[grid-template-rows] duration-500 ease-in-out grid ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
-                <div className="overflow-hidden">
-                    <div className="p-4 pt-2 space-y-0 bg-slate-50/50 dark:bg-black/20 border-t border-slate-100 dark:border-white/5">
-                        {Array.from({ length: 20 }, (_, i) => i + 1).map((lvl) => {
-                            let features: string[] = [];
-                            if (lvl === 1) {
-                               features = classData?.traits.map(t => t.name) || [];
-                            } else {
-                               features = CLASS_PROGRESSION[selectedClass]?.[lvl] || [];
-                            }
-                            
-                            if (!features || features.length === 0) return null;
-
-                            return (
-                                <div key={lvl} className="relative pl-6 pb-6 border-l-2 border-slate-200 dark:border-slate-700 ml-2 last:border-0 last:pb-0">
-                                    <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 transition-colors ${lvl <= level ? 'bg-primary border-primary' : 'bg-background-light dark:bg-background-dark border-slate-300 dark:border-slate-600'}`}></div>
-                                    
-                                    <div className="flex flex-col gap-1 -mt-1.5">
-                                        <span className={`text-xs font-bold uppercase tracking-wider ${lvl <= level ? 'text-primary' : 'text-slate-400'}`}>Nivel {lvl}</span>
-                                        <div className="space-y-2 mt-1">
-                                            {features.map(feat => {
-                                                let desc = GENERIC_FEATURES?.[feat];
-                                                if (lvl === 1 && !desc) {
-                                                    const trait = classData?.traits.find(t => t.name === feat);
-                                                    if (trait) desc = trait.description;
-                                                }
-                                                if (!desc && feat.includes("Subclass")) desc = "Ganás un rasgo de tu subclase elegida.";
-                                                if (!desc && feat.includes("Ability Score")) desc = "Mejora una característica o elige una dote.";
-
-                                                return (
-                                                    <div key={feat} className={`bg-white dark:bg-surface-dark p-3 rounded-lg border shadow-sm ${lvl <= level ? 'border-primary/30' : 'border-slate-200 dark:border-white/5'}`}>
-                                                        <span className={`block font-bold text-sm ${lvl <= level ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>{feat}</span>
-                                                        <span className="block text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{desc}</span>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="flex flex-col h-full min-h-screen relative bg-background-light dark:bg-background-dark">
       <header className="flex items-center justify-between p-4 pt-6 z-10 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm sticky top-0">
@@ -324,7 +343,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
       {step < 5 && renderProgressBar()}
 
-      <main className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar pb-5">
+      <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar pb-5">
         {step === 1 && (
             <>
                 <div className="px-6 pt-3 pb-1">
@@ -336,9 +355,18 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                 </div>
 
                 <div className="px-6 mb-4 flex items-center gap-4">
-                    <div className="relative shrink-0 group cursor-pointer">
-                        <div className="w-20 h-20 rounded-2xl bg-surface-dark border-2 border-dashed border-slate-600 flex items-center justify-center overflow-hidden hover:border-primary transition-colors">
-                            <span className="material-symbols-outlined text-3xl text-slate-500 group-hover:text-primary transition-colors">add_a_photo</span>
+                    <div 
+                        className="relative shrink-0 group cursor-pointer" 
+                        onClick={() => {
+                            const url = window.prompt("Pegar URL de la imagen (Hotlink):", charImage === DEFAULT_CHAR_IMAGE ? "" : charImage);
+                            if (url !== null) setCharImage(url || DEFAULT_CHAR_IMAGE);
+                        }}
+                    >
+                        <div 
+                            className="w-20 h-20 rounded-2xl bg-surface-dark border-2 border-dashed border-slate-600 flex items-center justify-center overflow-hidden hover:border-primary transition-all bg-cover bg-center"
+                            style={charImage !== DEFAULT_CHAR_IMAGE ? { backgroundImage: `url(${charImage})`, borderStyle: 'solid' } : {}}
+                        >
+                            {charImage === DEFAULT_CHAR_IMAGE && <span className="material-symbols-outlined text-3xl text-slate-500 group-hover:text-primary transition-colors">add_a_photo</span>}
                         </div>
                         <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center border-2 border-background-dark">
                             <span className="material-symbols-outlined text-background-dark text-xs font-bold">edit</span>
@@ -445,7 +473,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                         </div>
                     </div>
 
-                    <ClassProgressionList selectedClass={selectedClass} />
+                    <ClassProgressionList selectedClass={selectedClass} subclassData={selectedSubclassData} currentLevel={level} />
 
                     <div className="px-6 mt-4">
                         <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Nivel</label>
@@ -453,7 +481,8 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                             <select
                                 value={level}
                                 onChange={(e) => setLevel(Number(e.target.value))}
-                                className="w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-xl pl-4 pr-10 py-3 text-base font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 appearance-none transition-all shadow-sm"
+                                style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
+                                className="w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-xl pl-4 pr-10 py-3 text-base font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all shadow-sm appearance-none"
                             >
                                 {Array.from({length: 20}, (_, i) => i + 1).map(lvl => (
                                     <option key={lvl} value={lvl}>Nivel {lvl}</option>
@@ -522,27 +551,37 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                         </div>
 
                         {selectedSubclassData && (
-                            <div className="px-6 mt-4 space-y-3">
-                                <div className="flex justify-center">
-                                    <span className="text-[10px] font-bold uppercase text-slate-400 bg-slate-100 dark:bg-white/5 px-3 py-1 rounded-full tracking-wider">Rasgos de {selectedSubclassData.name}</span>
-                                </div>
-                                {Object.entries(selectedSubclassData.features)
-                                    .sort((a, b) => Number(a[0]) - Number(b[0]))
-                                    .flatMap(([lvl, traits]) => {
-                                    const featureLevel = Number(lvl);
-                                    const isFuture = featureLevel > level;
-                                    return (traits as Trait[]).map(trait => (
-                                        <div key={trait.name} className={`bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm text-left ${isFuture ? 'opacity-75' : ''}`}>
-                                            <div className="flex flex-col items-start gap-1 mb-2">
-                                                <div className="flex w-full justify-between items-start">
-                                                    <p className="font-bold text-sm text-slate-900 dark:text-white">{trait.name}</p>
-                                                    <span className={`inline-block text-[9px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${isFuture ? 'bg-slate-100 dark:bg-white/5 text-slate-500 border-slate-200 dark:border-white/10' : 'bg-primary/10 text-primary border-primary/20'}`}>Nivel {lvl}</span>
+                            <div className="px-6 mt-4 animate-fadeIn">
+                                <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4">
+                                    <div className="flex items-start gap-3 mb-4 border-b border-slate-200 dark:border-white/10 pb-3">
+                                        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary shrink-0">
+                                            <span className="material-symbols-outlined">auto_awesome</span>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-slate-900 dark:text-white text-base leading-tight">{selectedSubclassData.name}</h4>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{selectedSubclassData.description}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="space-y-4">
+                                        {Object.entries(selectedSubclassData.features)
+                                            .sort(([a], [b]) => Number(a) - Number(b))
+                                            .map(([lvl, features]: [string, Trait[]]) => (
+                                            <div key={lvl} className="relative pl-4 border-l-2 border-slate-200 dark:border-white/10">
+                                                <div className="absolute -left-[5px] top-0 w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600"></div>
+                                                <span className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1 block">Nivel {lvl}</span>
+                                                <div className="space-y-2">
+                                                    {features.map((feat, idx) => (
+                                                        <div key={idx} className="bg-white dark:bg-surface-dark p-3 rounded-xl border border-slate-100 dark:border-white/5 shadow-sm">
+                                                            <span className="font-bold text-sm text-slate-900 dark:text-white block mb-1">{feat.name}</span>
+                                                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{feat.description}</p>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             </div>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{trait.description}</p>
-                                        </div>
-                                    ));
-                                })}
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
