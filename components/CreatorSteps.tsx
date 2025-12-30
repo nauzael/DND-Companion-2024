@@ -359,6 +359,85 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     return Math.max(1, baseHp + bonusTotal);
   };
 
+  const renderHpBreakdown = () => {
+    const hitDie = HIT_DIE[selectedClass] || 8;
+    const conMod = Math.floor((finalStats.CON - 10) / 2);
+    const avgRoll = Math.floor(hitDie / 2) + 1;
+    
+    let bonuses = [];
+    if (selectedSpecies === 'Dwarf') bonuses.push({ name: 'Resistencia Enana', val: level });
+    if (selectedClass === 'Sorcerer' && selectedSubclass === 'Draconic Sorcery') bonuses.push({ name: 'Resiliencia Dracónica', val: level });
+    
+    const allFeats = [
+        backgroundData?.feat, 
+        speciesData?.name === 'Human' ? selectedFeat : undefined,
+        ...asiLevels.map(l => asiDecisions[l]?.type === 'feat' ? asiDecisions[l]?.feat : undefined)
+    ].filter(Boolean);
+    if (allFeats.includes('Tough')) bonuses.push({ name: 'Dote: Duro', val: level * 2 });
+
+    const lvl1Total = hitDie + conMod;
+    const laterLvlBase = hpMethod === 'average' ? (avgRoll + conMod) * (level - 1) : manualRolledHP + (conMod * (level - 1));
+
+    return (
+        <div className="mt-3 p-4 bg-slate-50 dark:bg-black/20 rounded-xl border border-slate-200 dark:border-white/5 text-xs font-mono text-slate-600 dark:text-slate-400 shadow-inner">
+            <div className="flex justify-between items-center mb-1">
+                <span>Nivel 1 (Máx + CON):</span>
+                <span>{hitDie} + {conMod} = <span className="font-bold text-slate-900 dark:text-white">{lvl1Total}</span></span>
+            </div>
+            {level > 1 && (
+                <div className="flex justify-between items-center mb-1 border-t border-slate-200 dark:border-white/5 pt-1 border-dashed">
+                    <span className="text-slate-500 dark:text-slate-400">
+                        Niveles 2-{level} ({hpMethod === 'average' ? `Media (d${hitDie}/2 + 1 = ${avgRoll})` : 'Manual'} + CON):
+                    </span>
+                    <span>{laterLvlBase}</span>
+                </div>
+            )}
+            {bonuses.map((b, i) => (
+                <div key={i} className="flex justify-between items-center text-primary border-t border-slate-200 dark:border-white/5 pt-1 border-dashed">
+                    <span>{b.name}:</span>
+                    <span>+{b.val}</span>
+                </div>
+            ))}
+            <div className="border-t-2 border-slate-200 dark:border-white/10 mt-2 pt-2 flex justify-between text-sm font-bold text-slate-900 dark:text-white">
+                <span>Total Puntos de Golpe:</span>
+                <span className="text-primary">{calculateMaxHP()}</span>
+            </div>
+        </div>
+    );
+  };
+
+  // Speed Calculation
+  const calculateSpeed = () => {
+    let speed = speciesData?.speed || 30;
+
+    // Monk Unarmored Movement (Level 2+)
+    if (selectedClass === 'Monk' && level >= 2) {
+        if (level >= 18) speed += 30;
+        else if (level >= 14) speed += 25;
+        else if (level >= 10) speed += 20;
+        else if (level >= 6) speed += 15;
+        else speed += 10;
+    }
+
+    // Barbarian Fast Movement (Level 5+)
+    if (selectedClass === 'Barbarian' && level >= 5) {
+        speed += 10;
+    }
+    
+    // Feats: Mobile / Speedy
+    const allFeats = [
+        backgroundData?.feat, 
+        speciesData?.name === 'Human' ? selectedFeat : undefined,
+        ...asiLevels.map(l => asiDecisions[l]?.type === 'feat' ? asiDecisions[l]?.feat : undefined)
+    ].filter(Boolean);
+
+    if (allFeats.some(f => f === 'Mobile' || f === 'Speedy')) {
+        speed += 10;
+    }
+
+    return speed;
+  };
+
   // Identify active passives for display
   const getActivePassives = () => {
       const passives: string[] = [];
@@ -395,7 +474,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     hp: { current: calculateMaxHP(), max: calculateMaxHP(), temp: 0 },
     ac: calculateAC(),
     init: Math.floor((finalStats.DEX - 10) / 2),
-    speed: speciesData?.speed || 30,
+    speed: calculateSpeed(),
     profBonus: Math.ceil(1 + (level / 4)), // Approximate PB calculation
     stats: finalStats,
     skills: [...(backgroundData?.skills || []), ...selectedSkills],
@@ -901,7 +980,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                 <div className="pt-2 border-t border-slate-200 dark:border-white/10">
                     <div className="flex justify-between items-end mb-3">
                         <h3 className="text-lg font-bold">Puntos de Golpe</h3>
-                        <span className="text-2xl font-bold text-primary">{calculateMaxHP()} <span className="text-xs font-medium text-slate-500">HP Total</span></span>
                     </div>
                     
                     <div className="flex p-1 bg-slate-200 dark:bg-white/10 rounded-xl mb-3">
@@ -911,13 +989,13 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                 onClick={() => setHpMethod(m)}
                                 className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${hpMethod === m ? 'bg-white dark:bg-surface-dark shadow-sm text-primary' : 'text-slate-500 dark:text-slate-400'}`}
                             >
-                                {m === 'average' ? 'Promedio' : 'Manual'}
+                                {m === 'average' ? 'Media Fija' : 'Manual'}
                             </button>
                         ))}
                     </div>
 
                     {hpMethod === 'manual' && level > 1 && (
-                        <div className="bg-slate-100 dark:bg-white/5 p-4 rounded-xl border border-slate-200 dark:border-white/10">
+                        <div className="bg-slate-100 dark:bg-white/5 p-4 rounded-xl border border-slate-200 dark:border-white/10 mb-3">
                             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Suma tirada (Nivel 2-{level})</label>
                             <input 
                                 type="number" 
@@ -928,6 +1006,8 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                             <p className="text-xs text-slate-400 mt-2">Introduce la suma total de los dados de golpe tirados para los niveles posteriores al 1. El nivel 1 siempre es máximo.</p>
                         </div>
                     )}
+
+                    {renderHpBreakdown()}
                 </div>
 
                 {/* Level Up ASI/Feat Selections */}
