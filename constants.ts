@@ -1,3 +1,4 @@
+
 import { Character } from "./types";
 
 export const MOCK_CHARACTERS: Character[] = [
@@ -19,7 +20,13 @@ export const MOCK_CHARACTERS: Character[] = [
     skills: ["Athletics", "Persuasion"],
     languages: ["Common"],
     feats: ["Savage Attacker"],
-    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuD2QLD0dJ6wAOh2-H7nRgLrTanWwr_OY50vupYWkkdd6LQLQHOWc0Gi0mFVapUEU0p-EpMu3YYxluk_2gBDv6zr0Sugj6EglC4p7Hzeh2ePDmBaTTvkS9Ev91EXFBzXzlsKAd5rkDeQypcZpiSc11BE3sCl_2uXlsoBaGLI_G9a4M8ruqxX8qYuibAj9cACIs1wKJRjAoK5iHhLk3rkeR1zNkwjDwABSH72pV_uOs83RlKF2yCwWQbeecc9FX8AuMoCy8DdBa-9326S"
+    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuD2QLD0dJ6wAOh2-H7nRgLrTanWwr_OY50vupYWkkdd6LQLQHOWc0Gi0mFVapUEU0p-EpMu3YYxluk_2gBDv6zr0Sugj6EglC4p7Hzeh2ePDmBaTTvkS9Ev91EXFBzXzlsKAd5rkDeQypcZpiSc11BE3sCl_2uXlsoBaGLI_G9a4M8ruqxX8qYuibAj9cACIs1wKJRjAoK5iHhLk3rkeR1zNkwjDwABSH72pV_uOs83RlKF2yCwWQbeecc9FX8AuMoCy8DdBa-9326S",
+    inventory: [
+        { id: '1', name: 'Longsword', quantity: 1, equipped: true },
+        { id: '2', name: 'Shield', quantity: 1, equipped: true },
+        { id: '3', name: 'Chain Mail', quantity: 1, equipped: true },
+        { id: '4', name: 'Explorer\'s Pack', quantity: 1, equipped: false }
+    ]
   },
   {
     id: "c2",
@@ -39,7 +46,13 @@ export const MOCK_CHARACTERS: Character[] = [
     skills: ["Arcana", "History"],
     languages: ["Common", "Elvish", "Draconic"],
     feats: ["Magic Initiate (Wizard)"],
-    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuC83MqZyI9EfmkqwJ55ZdSV7wyMmdLf_r1RKBuN3dnT38HKEXE9xp4SxOF4nnWVKV1P-6pC93EnVbbbs-nkH5WXh16xC0sKwktsCdSEP7vcqWJaL-GbHaLt3SPaVPPs7eqhVCzuKNdcOGO3hcztn9ZmJreWRGvQK3BWcMXTMnHak04kEjkBKzNra2voSXlbpf_MZxtjPV3Ir8GRGH2JyfXEOIFQuDH0O8JMeDZn7c7nJgNRYSa-7B7tv5123BwaWuQBw38RaMM6onOj"
+    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuC83MqZyI9EfmkqwJ55ZdSV7wyMmdLf_r1RKBuN3dnT38HKEXE9xp4SxOF4nnWVKV1P-6pC93EnVbbbs-nkH5WXh16xC0sKwktsCdSEP7vcqWJaL-GbHaLt3SPaVPPs7eqhVCzuKNdcOGO3hcztn9ZmJreWRGvQK3BWcMXTMnHak04kEjkBKzNra2voSXlbpf_MZxtjPV3Ir8GRGH2JyfXEOIFQuDH0O8JMeDZn7c7nJgNRYSa-7B7tv5123BwaWuQBw38RaMM6onOj",
+    inventory: [
+        { id: '1', name: 'Quarterstaff', quantity: 1, equipped: true },
+        { id: '2', name: 'Spellbook', quantity: 1, equipped: false },
+        { id: '3', name: 'Component Pouch', quantity: 1, equipped: true },
+        { id: '4', name: 'Robe', quantity: 1, equipped: true }
+    ]
   },
   {
     id: "c3",
@@ -59,7 +72,12 @@ export const MOCK_CHARACTERS: Character[] = [
     skills: ["Athletics", "Survival"],
     languages: ["Common", "Dwarvish"],
     feats: ["Tough"],
-    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCgGhbiIXk5cP6Q_z92LCi-HnNNeh7clKWPBiOJLYZUz9m3fun1Nz8a5zIXEyoNTGtGKU58iHNU7Vb0rAJYt-bIDxMo_YULdp11w0xeHIF_cZFHw5rw02o27it8esb9puQ6axDedJZxEGG06UpWprgjZok9NPD7SsVEpiyOb05H0odeY4Qurti8gGM57g9Mr5onrb3O9s2upyz83WLfk3l3DooLLWuzk42zd6shXXLZ4u8rxLSTyDBFRaa41_rO-2TWcSAq4_p9wYMM"
+    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCgGhbiIXk5cP6Q_z92LCi-HnNNeh7clKWPBiOJLYZUz9m3fun1Nz8a5zIXEyoNTGtGKU58iHNU7Vb0rAJYt-bIDxMo_YULdp11w0xeHIF_cZFHw5rw02o27it8esb9puQ6axDedJZxEGG06UpWprgjZok9NPD7SsVEpiyOb05H0odeY4Qurti8gGM57g9Mr5onrb3O9s2upyz83WLfk3l3DooLLWuzk42zd6shXXLZ4u8rxLSTyDBFRaa41_rO-2TWcSAq4_p9wYMM",
+    inventory: [
+        { id: '1', name: 'Greataxe', quantity: 1, equipped: true },
+        { id: '2', name: 'Handaxe', quantity: 2, equipped: false },
+        { id: '3', name: 'Explorer\'s Pack', quantity: 1, equipped: false }
+    ]
   },
   {
     id: "c4",
@@ -79,7 +97,13 @@ export const MOCK_CHARACTERS: Character[] = [
     skills: ["Stealth", "Sleight of Hand", "Deception"],
     languages: ["Common", "Halfling"],
     feats: ["Alert"],
-    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCJaOk8hlb1Gat_iMmu5wYLJmB-sFTAqYnmaauH6b2UhCDQ6wRe825MuW2rmoItPGDKzXSoOOD8czydKrPhFJBUHw7BjZls6w1gpAUdVqCjE1SwOoKaRBkhBOC1MUQ0-b7WTrfyNAkggTw0gyhIMi3alY6PhUqgXsHEzoyY3vrVXLykFrx2nSn8svvyWbTGOOX4HcjRtJyFoSBQ24Yv40LS1JkfjcYYnXwsu3Ja8oT7CO0gwjA9YtCZz2dCHDM2h6AoTXhGkSYJYKwH"
+    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCJaOk8hlb1Gat_iMmu5wYLJmB-sFTAqYnmaauH6b2UhCDQ6wRe825MuW2rmoItPGDKzXSoOOD8czydKrPhFJBUHw7BjZls6w1gpAUdVqCjE1SwOoKaRBkhBOC1MUQ0-b7WTrfyNAkggTw0gyhIMi3alY6PhUqgXsHEzoyY3vrVXLykFrx2nSn8svvyWbTGOOX4HcjRtJyFoSBQ24Yv40LS1JkfjcYYnXwsu3Ja8oT7CO0gwjA9YtCZz2dCHDM2h6AoTXhGkSYJYKwH",
+    inventory: [
+        { id: '1', name: 'Shortsword', quantity: 1, equipped: true },
+        { id: '2', name: 'Shortbow', quantity: 1, equipped: false },
+        { id: '3', name: 'Leather Armor', quantity: 1, equipped: true },
+        { id: '4', name: 'Thieves\' Tools', quantity: 1, equipped: false }
+    ]
   },
   {
     id: "c5",
@@ -99,7 +123,11 @@ export const MOCK_CHARACTERS: Character[] = [
     skills: ["Survival", "Animal Handling"],
     languages: ["Common"],
     feats: ["Great Weapon Master"],
-    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuA6jSCpdLMYhMuOQn5CWTc4HBJFAgMre9gobPmPpE5UgWvBWXY9_zpDU1aoucKc9-3pk4mY_JdZXB3ZrKPSBzK6xK5-k17mmFcEyi4hckKFWo8YNB1TSKkTJLrzrsuhnMHja_K0eIS6y4Znpq3ATGkYauK5yZwAZbuBgpavnxG-bZChxn8d-2FW3q40QcPfjB5n9cr0L8_CLmEuR63SShskojm5Gd4o0SOjUOef0SmTErXYaKVCAGvdyyTv5ViQbz58FomAk6rFUUX1"
+    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuA6jSCpdLMYhMuOQn5CWTc4HBJFAgMre9gobPmPpE5UgWvBWXY9_zpDU1aoucKc9-3pk4mY_JdZXB3ZrKPSBzK6xK5-k17mmFcEyi4hckKFWo8YNB1TSKkTJLrzrsuhnMHja_K0eIS6y4Znpq3ATGkYauK5yZwAZbuBgpavnxG-bZChxn8d-2FW3q40QcPfjB5n9cr0L8_CLmEuR63SShskojm5Gd4o0SOjUOef0SmTErXYaKVCAGvdyyTv5ViQbz58FomAk6rFUUX1",
+    inventory: [
+        { id: '1', name: 'Greatsword', quantity: 1, equipped: true },
+        { id: '2', name: 'Plate Armor', quantity: 1, equipped: true }
+    ]
   }
 ];
 

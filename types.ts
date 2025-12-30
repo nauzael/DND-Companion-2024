@@ -1,3 +1,11 @@
+
+export interface InventoryItem {
+  id: string; // Unique ID for this instance
+  name: string;
+  quantity: number;
+  equipped: boolean;
+}
+
 export interface Character {
   id: string;
   name: string;
@@ -8,7 +16,7 @@ export interface Character {
   background: string;
   alignment?: string;
   hp: { current: number; max: number; temp: number };
-  ac: number;
+  ac: number; // Base or override, calculated usually
   init: number;
   speed: number;
   profBonus: number;
@@ -17,7 +25,7 @@ export interface Character {
   languages: string[];
   feats: string[];
   imageUrl: string;
-  inventory?: string[]; // IDs or names of items
+  inventory: InventoryItem[]; 
   preparedSpells?: string[];
 }
 
@@ -32,14 +40,31 @@ export interface Spell {
   prepared?: boolean;
 }
 
-export interface Item {
+export interface ItemData {
   name: string;
-  type: string;
+  type: 'Weapon' | 'Armor' | 'Gear' | 'Tool';
   weight: number;
-  quantity?: number;
-  notes?: string;
-  equipped?: boolean;
-  tags?: string[];
+  cost: string; // "10 GP"
+  description?: string;
+}
+
+export interface WeaponData extends ItemData {
+  type: 'Weapon';
+  category: 'Simple' | 'Martial';
+  rangeType: 'Melee' | 'Ranged';
+  damage: string;
+  damageType: string;
+  properties: string[];
+  mastery?: string;
+}
+
+export interface ArmorData extends ItemData {
+  type: 'Armor';
+  armorType: 'Light' | 'Medium' | 'Heavy' | 'Shield';
+  baseAC: number;
+  stealthDisadvantage: boolean;
+  strengthReq: number;
+  maxDex?: number; // 2 for medium, 0 for heavy (effectively undefined means infinite for light)
 }
 
 export type ViewState = 'list' | 'create' | 'sheet';
@@ -75,23 +100,6 @@ export interface SubclassData {
     name: string;
     description: string;
     features: Record<number, Trait[]>;
-}
-
-export interface Weapon {
-    name: string;
-    damage: string;
-    type: string;
-    properties: string[];
-    mastery: string;
-    equipped: boolean;
-}
-
-export interface Armor {
-    baseAC: number;
-    type: 'Light' | 'Medium' | 'Heavy' | 'Shield';
-    stealthDisadvantage: boolean;
-    strengthReq: number;
-    maxDex?: number;
 }
 
 export interface SpellDetail {

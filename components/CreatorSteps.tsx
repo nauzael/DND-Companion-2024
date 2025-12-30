@@ -506,7 +506,12 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
         speciesData?.name === 'Human' ? selectedFeat : undefined,
         ...asiLevels.map(l => asiDecisions[l]?.type === 'feat' ? asiDecisions[l]?.feat : undefined)
     ].filter((f): f is string => !!f),
-    inventory: [generateTrinket(), ...(backgroundData?.equipment || [])],
+    inventory: [generateTrinket(), ...(backgroundData?.equipment || [])].map((item, i) => ({
+      id: `init-item-${i}`,
+      name: item,
+      quantity: 1,
+      equipped: false
+    })),
     imageUrl: charImage
   };
 

@@ -32,6 +32,10 @@ const App: React.FC = () => {
     setView('sheet');
   };
 
+  const handleCharacterUpdate = (updatedChar: Character) => {
+    setCharacters(prev => prev.map(c => c.id === updatedChar.id ? updatedChar : c));
+  };
+
   return (
     <div className="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-white min-h-screen">
       <div className="mx-auto max-w-md bg-background-light dark:bg-background-dark shadow-2xl min-h-screen relative overflow-hidden">
@@ -52,7 +56,8 @@ const App: React.FC = () => {
         {view === 'sheet' && (
           <SheetTabs 
             character={activeCharacter} 
-            onBack={() => setView('list')} 
+            onBack={() => setView('list')}
+            onUpdate={handleCharacterUpdate}
           />
         )}
       </div>
