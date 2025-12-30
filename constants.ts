@@ -120,3 +120,16 @@ export const CLASS_UI_MAP: Record<string, { role: string, color: string, icon: s
   "Warlock": { role: "Pacto Arcano", color: "text-purple-700", icon: "skull" },
   "Wizard": { role: "Maestro Arcano", color: "text-blue-600", icon: "auto_fix_high" },
 };
+
+export const SPECIES_UI_MAP: Record<string, { color: string, icon: string }> = {
+  "Human": { color: "text-blue-500", icon: "accessibility_new" },
+  "Elf": { color: "text-green-500", icon: "eco" },
+  "Dwarf": { color: "text-orange-600", icon: "construction" },
+  "Halfling": { color: "text-yellow-500", icon: "directions_walk" },
+  "Dragonborn": { color: "text-red-600", icon: "local_fire_department" },
+  "Gnome": { color: "text-purple-500", icon: "psychology" },
+  "Orc": { color: "text-emerald-700", icon: "fitness_center" },
+  "Tiefling": { color: "text-rose-500", icon: "contrast" },
+  "Aasimar": { color: "text-amber-400", icon: "flare" },
+  "Goliath": { color: "text-slate-500", icon: "landscape" },
+};

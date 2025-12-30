@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Character, CreatorStep, Ability } from '../types';
-import { MAP_TEXTURE, CLASS_UI_MAP } from '../constants';
+import { MAP_TEXTURE, CLASS_UI_MAP, SPECIES_UI_MAP } from '../constants';
 import { 
   CLASS_LIST, 
   SPECIES_LIST, 
   BACKGROUNDS_DATA, 
   ALIGNMENTS, 
   LANGUAGES, 
-  CLASS_SKILL_DATA,
+  CLASS_SKILL_DATA, 
   SPECIES_DETAILS,
   CLASS_DETAILS,
   HIT_DIE,
@@ -79,6 +79,14 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
       card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
   }, [selectedClass]);
+
+  // Auto-scroll to selected species
+  useEffect(() => {
+    const card = document.getElementById(`species-card-${selectedSpecies}`);
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, [selectedSpecies]);
 
   // Reset skills when class changes
   useEffect(() => {
@@ -226,8 +234,8 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                     </div>
                     
                     <div className="w-full relative group">
-                        <div className="absolute top-0 bottom-8 left-0 w-8 bg-gradient-to-r from-background-light dark:from-background-dark to-transparent z-10 pointer-events-none"></div>
-                        <div className="absolute top-0 bottom-8 right-0 w-8 bg-gradient-to-l from-background-light dark:from-background-dark to-transparent z-10 pointer-events-none"></div>
+                        <div className="absolute top-0 bottom-0 left-0 w-12 bg-gradient-to-r from-background-light to-transparent dark:from-background-dark z-10 pointer-events-none"></div>
+                        <div className="absolute top-0 bottom-0 right-0 w-12 bg-gradient-to-l from-background-light to-transparent dark:from-background-dark z-10 pointer-events-none"></div>
 
                         <div className="flex overflow-x-auto gap-4 px-6 py-6 no-scrollbar w-full snap-x snap-mandatory">
                             {CLASS_LIST.map((cls) => {
@@ -246,7 +254,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                             w-36 h-52 rounded-3xl p-4 flex flex-col items-center justify-between transition-all duration-300 ease-out border-2
                                             ${isSelected 
                                                 ? 'bg-white dark:bg-surface-dark border-primary shadow-[0_10px_30px_-10px_rgba(53,158,255,0.4)] scale-105 -translate-y-1' 
-                                                : 'bg-white/50 dark:bg-surface-dark/50 border-transparent hover:border-slate-300 dark:hover:border-white/10 hover:bg-white dark:hover:bg-surface-dark shadow-sm'
+                                                : 'bg-white/60 dark:bg-surface-dark/60 border-transparent hover:border-slate-300 dark:hover:border-white/10 hover:bg-white dark:hover:bg-surface-dark shadow-sm'
                                             }
                                         `}>
                                             <div className={`
@@ -309,20 +317,62 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
                 <div className="px-6 space-y-3">
                     <div>
-                        <h3 className="text-lg font-bold mb-2">Raza</h3>
-                        <div className="relative">
-                            <select 
-                                value={selectedSpecies}
-                                onChange={(e) => setSelectedSpecies(e.target.value)}
-                                className="w-full appearance-none bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-xl px-4 py-4 pr-10 text-base font-medium focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-shadow text-slate-900 dark:text-white"
-                            >
-                                {SPECIES_LIST.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                            <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-500">
-                                <span className="material-symbols-outlined">expand_more</span>
+                        <div className="flex justify-between items-end mb-3">
+                             <h3 className="text-lg font-bold">Raza</h3>
+                             <span className="text-primary text-xs font-medium">{speciesData?.name}</span>
+                        </div>
+                        
+                        <div className="w-full relative group">
+                            <div className="absolute top-0 bottom-0 left-0 w-12 bg-gradient-to-r from-background-light to-transparent dark:from-background-dark z-10 pointer-events-none"></div>
+                            <div className="absolute top-0 bottom-0 right-0 w-12 bg-gradient-to-l from-background-light to-transparent dark:from-background-dark z-10 pointer-events-none"></div>
+
+                            <div className="flex overflow-x-auto gap-4 px-6 py-4 no-scrollbar w-full snap-x snap-mandatory">
+                                {SPECIES_LIST.map((s) => {
+                                    const ui = SPECIES_UI_MAP[s] || { icon: 'face', color: 'text-slate-400' };
+                                    const isSelected = selectedSpecies === s;
+                                    return (
+                                        <label key={s} id={`species-card-${s}`} className="relative shrink-0 cursor-pointer group/card snap-center scroll-m-6">
+                                            <input 
+                                                className="peer sr-only" 
+                                                name="species" 
+                                                type="radio" 
+                                                checked={isSelected}
+                                                onChange={() => setSelectedSpecies(s)}
+                                            />
+                                            <div className={`
+                                                w-28 h-32 rounded-2xl p-3 flex flex-col items-center justify-center gap-2 transition-all duration-300 ease-out border-2
+                                                ${isSelected 
+                                                    ? 'bg-white dark:bg-surface-dark border-primary shadow-lg scale-105' 
+                                                    : 'bg-white/70 dark:bg-surface-dark/70 border-transparent hover:border-slate-300 dark:hover:border-white/10 hover:bg-white dark:hover:bg-surface-dark'
+                                                }
+                                            `}>
+                                                <div className={`
+                                                    w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300
+                                                    ${isSelected ? 'bg-primary/10' : 'bg-slate-100 dark:bg-white/5'}
+                                                `}>
+                                                    <span className={`material-symbols-outlined text-2xl ${ui.color}`}>{ui.icon}</span>
+                                                </div>
+                                                <span className={`font-bold text-xs text-center leading-tight ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+                                                    {s}
+                                                </span>
+                                                <div className={`
+                                                    absolute top-2 right-2 w-4 h-4 rounded-full bg-primary flex items-center justify-center text-black shadow-sm transition-all duration-300
+                                                    ${isSelected ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}
+                                                `}>
+                                                    <span className="material-symbols-outlined text-[10px] font-bold">check</span>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    );
+                                })}
+                                <div className="w-2 shrink-0"></div>
                             </div>
                         </div>
+
                         <div className="mt-2 grid grid-cols-1 gap-2">
+                            <p className="text-sm text-slate-600 dark:text-slate-300 italic mb-2">
+                                {speciesData?.description}
+                            </p>
                             {speciesData?.traits.slice(0, 2).map(trait => (
                                 <div key={trait.name} className="flex flex-col bg-slate-100 dark:bg-white/5 px-4 py-3 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
                                     <span className="text-xs font-bold text-slate-800 dark:text-white mb-1">{trait.name}</span>
