@@ -473,8 +473,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                         </div>
                     </div>
 
-                    <ClassProgressionList selectedClass={selectedClass} subclassData={selectedSubclassData} currentLevel={level} />
-
                     <div className="px-6 mt-4">
                         <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Nivel</label>
                         <div className="relative">
@@ -493,6 +491,9 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                             </div>
                         </div>
                     </div>
+
+                    <ClassProgressionList selectedClass={selectedClass} subclassData={selectedSubclassData} currentLevel={level} />
+
                 </div>
 
                 {/* Subclass Selection (Level 3+) */}
@@ -521,17 +522,17 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                                 onChange={() => setSelectedSubclass(sub.name)}
                                             />
                                             <div className={`
-                                                w-48 h-auto min-h-[140px] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 ease-out border-2 text-center
+                                                w-48 h-44 rounded-2xl p-5 flex flex-col items-center justify-center gap-1 transition-all duration-300 ease-out border-2 text-center relative
                                                 ${isSelected 
                                                     ? 'bg-white dark:bg-surface-dark border-primary shadow-[0_10px_30px_-10px_rgba(53,158,255,0.4)] scale-105' 
                                                     : 'bg-white/60 dark:bg-surface-dark/60 border-transparent hover:border-slate-300 dark:hover:border-white/10 hover:bg-white dark:hover:bg-surface-dark shadow-sm'
                                                 }
                                             `}>
-                                                <div className="flex flex-col items-center w-full">
-                                                    <span className={`block font-bold text-sm leading-tight mb-2 ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+                                                <div className="flex flex-col items-center w-full gap-2">
+                                                    <span className={`block font-bold text-sm leading-tight ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
                                                         {sub.name}
                                                     </span>
-                                                    <span className="block text-[10px] text-slate-500 leading-snug line-clamp-4">
+                                                    <span className="block text-[10px] text-slate-500 leading-relaxed line-clamp-4">
                                                         {sub.description}
                                                     </span>
                                                 </div>
