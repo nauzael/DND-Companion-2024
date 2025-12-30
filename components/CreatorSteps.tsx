@@ -30,6 +30,14 @@ const POINT_BUY_COSTS: Record<number, number> = {
 
 const DEFAULT_CHAR_IMAGE = "https://lh3.googleusercontent.com/aida-public/AB6AXuAZr-RDRTUNGSsd_-BR5U-r2yLkQsbKsJ6mAkTpEGl0e4IZW86PQSc2se3iegp_aML54kIgoYOyDhlwHDiNPfKasvRE8Wymti23tWDRa-QL1JZUqBNPNDJzOj5AknxSMaVS0FH7GW9srFK1u5uzt7Nb5M5LvPbaZUGy484PX685rHODXkI9CwFaha_RbMGbh-LOIz8R0OqlhyI9CDp--2zy5UhpgJ8GLuhKjmJsjCWKb-F8PJWpJtTk_3AmSP79rbDxmeLWsGsP61hv";
 
+// Helper for ASI Selection State
+interface AsiDecision {
+    type: 'stat' | 'feat';
+    stat1?: Ability;
+    stat2?: Ability;
+    feat?: string;
+}
+
 const SectionSeparator = ({ label }: { label: string }) => (
   <div className="relative py-6 flex items-center justify-center w-full px-6">
     <div className="absolute inset-0 flex items-center px-6">
@@ -141,10 +149,14 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   const [selectedFeat, setSelectedFeat] = useState<string>(''); 
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   
-  // Stats State
+  // Stats & HP State
   const [statMethod, setStatMethod] = useState<'pointBuy' | 'standard' | 'manual'>('pointBuy');
-  // Base stats (before racial/background bonuses)
   const [baseStats, setBaseStats] = useState<Record<Ability, number>>({ STR: 8, DEX: 8, CON: 8, INT: 8, WIS: 8, CHA: 8 });
+  const [hpMethod, setHpMethod] = useState<'average' | 'manual'>('average');
+  const [manualRolledHP, setManualRolledHP] = useState<number>(0);
+  
+  // ASI Decisions State (Level -> Decision)
+  const [asiDecisions, setAsiDecisions] = useState<Record<number, AsiDecision>>({});
 
   // Derived Data
   const speciesData = SPECIES_DETAILS[selectedSpecies];
@@ -154,14 +166,38 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   const availableSubclasses = useMemo(() => SUBCLASS_OPTIONS[selectedClass] || [], [selectedClass]);
   const selectedSubclassData = useMemo(() => availableSubclasses.find(s => s.name === selectedSubclass), [availableSubclasses, selectedSubclass]);
 
-  // Calculate Final Stats (Base + Background Bonuses)
+  // Identify Levels with ASI
+  const asiLevels = useMemo(() => {
+      const levels: number[] = [];
+      const progression = CLASS_PROGRESSION[selectedClass] || {};
+      for (let l = 1; l <= level; l++) {
+          if (progression[l]?.includes('Ability Score Improvement')) {
+              levels.push(l);
+          }
+      }
+      return levels;
+  }, [selectedClass, level]);
+
+  // Calculate Final Stats (Base + Background Bonuses + ASIs)
   const finalStats = useMemo(() => {
     const stats = { ...baseStats };
+    
+    // Background Bonuses
     backgroundData?.scores.forEach(ability => {
         stats[ability] = Math.min(20, stats[ability] + 1);
     });
+
+    // Apply ASIs
+    asiLevels.forEach(lvl => {
+        const decision = asiDecisions[lvl];
+        if (decision?.type === 'stat') {
+            if (decision.stat1) stats[decision.stat1] = Math.min(20, stats[decision.stat1] + 1);
+            if (decision.stat2) stats[decision.stat2] = Math.min(20, stats[decision.stat2] + 1);
+        }
+    });
+
     return stats;
-  }, [baseStats, backgroundData]);
+  }, [baseStats, backgroundData, asiLevels, asiDecisions]);
 
   // Point Buy Logic
   const usedPoints = useMemo(() => {
@@ -185,34 +221,16 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     }
   }, [selectedSpecies, speciesData, selectedFeat]);
 
-  // Auto-scroll logic (Reduced)
-  useEffect(() => {
-    const card = document.getElementById(`class-card-${selectedClass}`);
-    if (card) card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  }, [selectedClass]);
-
-  useEffect(() => {
-    const card = document.getElementById(`species-card-${selectedSpecies}`);
-    if (card) card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  }, [selectedSpecies]);
-
-  useEffect(() => {
-    const card = document.getElementById(`background-card-${selectedBackground}`);
-    if (card) card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  }, [selectedBackground]);
-
-  // Subclass auto-scroll
-  useEffect(() => {
-    if (selectedSubclass) {
-        const card = document.getElementById(`subclass-card-${selectedSubclass}`);
-        if (card) card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    }
-  }, [selectedSubclass]);
-
-  // Reset skills/subclass when class changes
+  // Reset skills/subclass/ASIs when class changes
   useEffect(() => {
     setSelectedSkills([]);
     setSelectedSubclass('');
+    setAsiDecisions({});
+  }, [selectedClass]);
+
+  // Reset HP input when class changes
+  useEffect(() => {
+      setManualRolledHP(0);
   }, [selectedClass]);
 
   // Auto-select first subclass if level >= 3 and none selected
@@ -260,6 +278,13 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     }
   };
 
+  const handleAsiChange = (level: number, updates: Partial<AsiDecision>) => {
+      setAsiDecisions(prev => ({
+          ...prev,
+          [level]: { ...(prev[level] || { type: 'stat', stat1: 'STR', stat2: 'STR' }), ...updates }
+      }));
+  };
+
   const canProceed = () => {
     if (step === 4) {
         return selectedSkills.length === classSkillOptions.count;
@@ -267,17 +292,90 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     return true;
   };
 
+  // AC Calculation including Unarmored Defense and features
+  const calculateAC = () => {
+    const dexMod = Math.floor((finalStats.DEX - 10) / 2);
+    const conMod = Math.floor((finalStats.CON - 10) / 2);
+    const wisMod = Math.floor((finalStats.WIS - 10) / 2);
+    
+    let ac = 10 + dexMod;
+
+    if (selectedClass === 'Barbarian') {
+        ac = 10 + dexMod + conMod;
+    } else if (selectedClass === 'Monk') {
+        ac = 10 + dexMod + wisMod;
+    } else if (selectedClass === 'Sorcerer' && selectedSubclass === 'Draconic Sorcery') {
+        ac = 13 + dexMod;
+    }
+    
+    return ac;
+  };
+
   // HP Calculation
   const calculateMaxHP = () => {
     const conMod = Math.floor((finalStats.CON - 10) / 2);
-    const hitDie = HIT_DIE[selectedClass];
-    // Level 1: Full Hit Die + CON
-    let maxHP = hitDie + conMod;
-    // Level > 1: Avg Hit Die (Die/2 + 1) + CON
+    const hitDie = HIT_DIE[selectedClass] || 8;
+    
+    let baseHp = 0;
+    
+    // Level 1: Max Die + CON
+    baseHp += hitDie + conMod;
+
+    // Subsequent Levels
     if (level > 1) {
-        maxHP += (Math.floor(hitDie / 2) + 1 + conMod) * (level - 1);
+        if (hpMethod === 'average') {
+            const avg = Math.floor(hitDie / 2) + 1;
+            baseHp += (avg + conMod) * (level - 1);
+        } else {
+            // Manual: User inputs total rolled value for levels 2+, we add CON per level
+            baseHp += manualRolledHP + (conMod * (level - 1));
+        }
     }
-    return maxHP;
+
+    // Bonuses
+    let bonusTotal = 0;
+
+    // Dwarf Trait: Dwarven Toughness
+    if (selectedSpecies === 'Dwarf') {
+        bonusTotal += level; // +1 per level
+    }
+
+    // Sorcerer Subclass: Draconic Resilience
+    if (selectedClass === 'Sorcerer' && selectedSubclass === 'Draconic Sorcery') {
+        bonusTotal += level; // +1 per level
+    }
+
+    // Feat: Tough (from Background, Human, or ASIs)
+    const allFeats = [
+        backgroundData?.feat, 
+        speciesData?.name === 'Human' ? selectedFeat : undefined,
+        ...asiLevels.map(l => asiDecisions[l]?.type === 'feat' ? asiDecisions[l]?.feat : undefined)
+    ].filter(Boolean);
+
+    if (allFeats.includes('Tough')) {
+        bonusTotal += (level * 2);
+    }
+
+    return Math.max(1, baseHp + bonusTotal);
+  };
+
+  // Identify active passives for display
+  const getActivePassives = () => {
+      const passives: string[] = [];
+      if (selectedClass === 'Barbarian') passives.push('Unarmored Defense (CON)');
+      if (selectedClass === 'Monk') passives.push('Unarmored Defense (WIS)');
+      if (selectedClass === 'Sorcerer' && selectedSubclass === 'Draconic Sorcery') passives.push('Draconic Resilience (AC 13+DEX, +1 HP/lvl)');
+      if (selectedSpecies === 'Dwarf') passives.push('Dwarven Toughness (+1 HP/lvl)');
+      
+      const feats = [
+          backgroundData?.feat, 
+          speciesData?.name === 'Human' ? selectedFeat : undefined,
+          ...asiLevels.map(l => asiDecisions[l]?.type === 'feat' ? asiDecisions[l]?.feat : undefined)
+      ].filter(Boolean);
+      
+      if (feats.includes('Tough')) passives.push('Tough Feat (+2 HP/lvl)');
+
+      return passives;
   };
 
   const generateTrinket = () => {
@@ -295,14 +393,18 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     background: selectedBackground,
     alignment: selectedAlignment,
     hp: { current: calculateMaxHP(), max: calculateMaxHP(), temp: 0 },
-    ac: 10 + Math.floor((finalStats.DEX - 10) / 2),
+    ac: calculateAC(),
     init: Math.floor((finalStats.DEX - 10) / 2),
     speed: speciesData?.speed || 30,
     profBonus: Math.ceil(1 + (level / 4)), // Approximate PB calculation
     stats: finalStats,
     skills: [...(backgroundData?.skills || []), ...selectedSkills],
     languages: ['Common', selectedLanguage1, selectedLanguage2].filter(Boolean),
-    feats: [backgroundData?.feat, speciesData?.name === 'Human' ? selectedFeat : undefined].filter((f): f is string => !!f),
+    feats: [
+        backgroundData?.feat, 
+        speciesData?.name === 'Human' ? selectedFeat : undefined,
+        ...asiLevels.map(l => asiDecisions[l]?.type === 'feat' ? asiDecisions[l]?.feat : undefined)
+    ].filter((f): f is string => !!f),
     inventory: [generateTrinket(), ...(backgroundData?.equipment || [])],
     imageUrl: charImage
   };
@@ -327,6 +429,8 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
       </div>
     </div>
   );
+
+  const activePassives = getActivePassives();
 
   return (
     <div className="flex flex-col h-full min-h-screen relative bg-background-light dark:bg-background-dark">
@@ -742,54 +846,166 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
         )}
 
         {step === 2 && (
-            <div className="px-6 py-4 space-y-3">
-                <div className="flex justify-between items-center mb-3">
-                     <h3 className="text-xl font-bold">Atributos</h3>
-                     {statMethod === 'pointBuy' && (
-                         <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold">
-                             {remainingPoints} pts
-                         </div>
-                     )}
-                </div>
-
-                <div className="flex p-1 bg-slate-200 dark:bg-white/10 rounded-xl mb-3">
-                    {(['pointBuy', 'manual'] as const).map(m => (
-                        <button 
-                            key={m}
-                            onClick={() => setStatMethod(m)}
-                            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${statMethod === m ? 'bg-white dark:bg-surface-dark shadow-sm text-primary' : 'text-slate-500 dark:text-slate-400'}`}
-                        >
-                            {m === 'pointBuy' ? 'Point Buy' : 'Manual'}
-                        </button>
-                    ))}
-                </div>
-
+            <div className="px-6 py-4 space-y-6">
                 <div className="space-y-3">
-                    {(Object.keys(baseStats) as Ability[]).map(stat => (
-                        <div key={stat} className="flex items-center justify-between bg-slate-100 dark:bg-white/5 p-3 rounded-xl border border-slate-200 dark:border-white/10">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-white/10 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300">
-                                    {stat}
+                    <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-xl font-bold">Atributos</h3>
+                        {statMethod === 'pointBuy' && (
+                            <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold">
+                                {remainingPoints} pts
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex p-1 bg-slate-200 dark:bg-white/10 rounded-xl mb-3">
+                        {(['pointBuy', 'manual'] as const).map(m => (
+                            <button 
+                                key={m}
+                                onClick={() => setStatMethod(m)}
+                                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${statMethod === m ? 'bg-white dark:bg-surface-dark shadow-sm text-primary' : 'text-slate-500 dark:text-slate-400'}`}
+                            >
+                                {m === 'pointBuy' ? 'Point Buy' : 'Manual'}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="space-y-3">
+                        {(Object.keys(baseStats) as Ability[]).map(stat => (
+                            <div key={stat} className="flex items-center justify-between bg-slate-100 dark:bg-white/5 p-3 rounded-xl border border-slate-200 dark:border-white/10">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-white/10 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300">
+                                        {stat}
+                                    </div>
+                                    <div>
+                                        <span className="block font-bold text-slate-900 dark:text-white">{stat}</span>
+                                        <span className="text-xs text-slate-500">
+                                            Final: <span className="text-primary font-bold">{finalStats[stat]}</span>
+                                        </span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <span className="block font-bold text-slate-900 dark:text-white">{stat}</span>
-                                    <span className="text-xs text-slate-500">
-                                        Final: <span className="text-primary font-bold">{finalStats[stat]}</span>
-                                    </span>
+                                <div className="flex items-center gap-3">
+                                    <button onClick={() => handleStatChange(stat, -1)} className="w-8 h-8 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center hover:bg-slate-300 dark:hover:bg-white/20 transition-colors">
+                                        <span className="material-symbols-outlined text-sm">remove</span>
+                                    </button>
+                                    <span className="w-6 text-center font-bold text-lg">{baseStats[stat]}</span>
+                                    <button onClick={() => handleStatChange(stat, 1)} className="w-8 h-8 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center hover:bg-slate-300 dark:hover:bg-white/20 transition-colors">
+                                        <span className="material-symbols-outlined text-sm">add</span>
+                                    </button>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <button onClick={() => handleStatChange(stat, -1)} className="w-8 h-8 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center hover:bg-slate-300 dark:hover:bg-white/20 transition-colors">
-                                    <span className="material-symbols-outlined text-sm">remove</span>
-                                </button>
-                                <span className="w-6 text-center font-bold text-lg">{baseStats[stat]}</span>
-                                <button onClick={() => handleStatChange(stat, 1)} className="w-8 h-8 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center hover:bg-slate-300 dark:hover:bg-white/20 transition-colors">
-                                    <span className="material-symbols-outlined text-sm">add</span>
-                                </button>
-                            </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
+
+                {/* HP Method Selection */}
+                <div className="pt-2 border-t border-slate-200 dark:border-white/10">
+                    <div className="flex justify-between items-end mb-3">
+                        <h3 className="text-lg font-bold">Puntos de Golpe</h3>
+                        <span className="text-2xl font-bold text-primary">{calculateMaxHP()} <span className="text-xs font-medium text-slate-500">HP Total</span></span>
+                    </div>
+                    
+                    <div className="flex p-1 bg-slate-200 dark:bg-white/10 rounded-xl mb-3">
+                        {(['average', 'manual'] as const).map(m => (
+                            <button 
+                                key={m}
+                                onClick={() => setHpMethod(m)}
+                                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${hpMethod === m ? 'bg-white dark:bg-surface-dark shadow-sm text-primary' : 'text-slate-500 dark:text-slate-400'}`}
+                            >
+                                {m === 'average' ? 'Promedio' : 'Manual'}
+                            </button>
+                        ))}
+                    </div>
+
+                    {hpMethod === 'manual' && level > 1 && (
+                        <div className="bg-slate-100 dark:bg-white/5 p-4 rounded-xl border border-slate-200 dark:border-white/10">
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Suma tirada (Nivel 2-{level})</label>
+                            <input 
+                                type="number" 
+                                value={manualRolledHP} 
+                                onChange={(e) => setManualRolledHP(Math.max(0, parseInt(e.target.value) || 0))}
+                                className="w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-lg font-bold outline-none focus:ring-2 focus:ring-primary/50"
+                            />
+                            <p className="text-xs text-slate-400 mt-2">Introduce la suma total de los dados de golpe tirados para los niveles posteriores al 1. El nivel 1 siempre es máximo.</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Level Up ASI/Feat Selections */}
+                {asiLevels.length > 0 && (
+                    <div className="pt-2 border-t border-slate-200 dark:border-white/10 space-y-4">
+                        <h3 className="text-lg font-bold">Mejoras de Nivel</h3>
+                        {asiLevels.map(lvl => {
+                            const decision = asiDecisions[lvl] || { type: 'stat', stat1: 'STR', stat2: 'STR' };
+                            return (
+                                <div key={lvl} className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-2xl p-4 shadow-sm">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-sm font-bold text-primary uppercase tracking-wider">Nivel {lvl}</span>
+                                        <div className="flex bg-slate-100 dark:bg-white/5 rounded-lg p-0.5">
+                                            <button 
+                                                onClick={() => handleAsiChange(lvl, { type: 'stat' })}
+                                                className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${decision.type === 'stat' ? 'bg-white dark:bg-surface-dark shadow text-primary' : 'text-slate-500'}`}
+                                            >
+                                                Stats
+                                            </button>
+                                            <button 
+                                                onClick={() => handleAsiChange(lvl, { type: 'feat' })}
+                                                className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${decision.type === 'feat' ? 'bg-white dark:bg-surface-dark shadow text-primary' : 'text-slate-500'}`}
+                                            >
+                                                Dote
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {decision.type === 'stat' ? (
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Carac. 1 (+1)</label>
+                                                <select 
+                                                    value={decision.stat1} 
+                                                    onChange={(e) => handleAsiChange(lvl, { stat1: e.target.value as Ability })}
+                                                    className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg py-2 px-2 text-sm font-bold outline-none"
+                                                >
+                                                    {(Object.keys(baseStats) as Ability[]).map(s => <option key={s} value={s}>{s}</option>)}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Carac. 2 (+1)</label>
+                                                <select 
+                                                    value={decision.stat2} 
+                                                    onChange={(e) => handleAsiChange(lvl, { stat2: e.target.value as Ability })}
+                                                    className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg py-2 px-2 text-sm font-bold outline-none"
+                                                >
+                                                    {(Object.keys(baseStats) as Ability[]).map(s => <option key={s} value={s}>{s}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="col-span-2 text-xs text-center text-slate-400 mt-1">
+                                                {decision.stat1 === decision.stat2 ? `+2 a ${decision.stat1}` : `+1 a ${decision.stat1}, +1 a ${decision.stat2}`}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <select 
+                                                value={decision.feat || ''}
+                                                onChange={(e) => handleAsiChange(lvl, { feat: e.target.value })}
+                                                className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg py-2 px-3 text-sm font-bold outline-none"
+                                            >
+                                                <option value="" disabled>Selecciona una dote...</option>
+                                                {FEAT_OPTIONS.map(f => (
+                                                    <option key={f.name} value={f.name}>{f.name}</option>
+                                                ))}
+                                            </select>
+                                            {decision.feat && (
+                                                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 p-2 rounded-lg">
+                                                    {FEAT_OPTIONS.find(f => f.name === decision.feat)?.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         )}
 
@@ -969,6 +1185,12 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                 <div key={f} className="flex items-center gap-2">
                                     <span className="material-symbols-outlined text-primary text-sm">military_tech</span>
                                     <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{f}</span>
+                                </div>
+                            ))}
+                            {activePassives.map(p => (
+                                <div key={p} className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-purple-500 text-sm">auto_awesome</span>
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{p}</span>
                                 </div>
                             ))}
                         </div>
