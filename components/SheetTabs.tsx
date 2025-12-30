@@ -199,6 +199,13 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
     const equippedWeapons = inventory.filter(i => i.equipped && WEAPONS_DB[i.name]);
     const isDualWielding = equippedWeapons.length > 1;
 
+    // Monk Martial Arts Logic
+    const isMonk = character.class === 'Monk';
+    let martialArtsDie = '1d6';
+    if (character.level >= 5) martialArtsDie = '1d8';
+    if (character.level >= 11) martialArtsDie = '1d10';
+    if (character.level >= 17) martialArtsDie = '1d12';
+
     return (
     <div className="px-4 pb-24">
       {/* Quick Stats */}
@@ -297,10 +304,22 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
              const isRanged = weapon.rangeType === 'Ranged';
              const isThrown = weapon.properties.some(p => p.includes('Thrown'));
              const isHeavy = weapon.properties.includes('Heavy');
-             const isTwoHanded = weapon.properties.includes('Two-Handed'); // Simplified, versatile handled by user choice usually but here assuming 1H unless strict 2H
+             const isTwoHanded = weapon.properties.includes('Two-Handed'); 
              
+             // Monk Weapon Check
+             const isMonkWeapon = isMonk && (
+                (weapon.category === 'Simple' && weapon.rangeType === 'Melee') ||
+                (weapon.category === 'Martial' && weapon.rangeType === 'Melee' && weapon.properties.includes('Light'))
+             );
+
              // Ability Modifier
              let useDex = isRanged || (isFinesse && dexMod > strMod);
+             
+             // Monk Martial Arts (Dex)
+             if (isMonk && (isMonkWeapon || weapon.name === 'Unarmed Strike')) {
+                 if (dexMod > strMod) useDex = true;
+             }
+
              let mod = useDex ? dexMod : strMod;
              
              // Base Hit Bonus
@@ -308,6 +327,20 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
              
              // Base Damage Bonus
              let dmgMod = mod;
+
+             // Damage Die Logic (Martial Arts)
+             let damageDie = weapon.damage;
+             if (isMonk && (isMonkWeapon || weapon.name === 'Unarmed Strike')) {
+                 const getDieSize = (s: string) => {
+                    if (s === '1') return 1;
+                    const parts = s.split('d');
+                    return parts.length > 1 ? parseInt(parts[1]) : 0;
+                 };
+                 // If MA die is better than weapon die, or it's Unarmed Strike, use MA die
+                 if (weapon.name === 'Unarmed Strike' || getDieSize(martialArtsDie) > getDieSize(weapon.damage)) {
+                     damageDie = martialArtsDie;
+                 }
+             }
 
              // --- Feature Modifiers ---
              let activeBonuses: string[] = [];
@@ -331,7 +364,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
              }
 
              // Thrown Weapon Fighting
-             if (hasThrown && hasThrown) { // Check variable name typo fix
+             if (hasThrown && isThrown) { 
                  dmgMod += 2;
                  activeBonuses.push("Thrown +2");
              }
@@ -349,6 +382,9 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                               {weapon.properties.map(p => (
                                 <span key={p} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-300">{p}</span>
                               ))}
+                              {isMonk && (isMonkWeapon || weapon.name === 'Unarmed Strike') && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300">Monk</span>
+                              )}
                           </div>
                        </div>
                    </div>
@@ -364,7 +400,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                    </button>
                    <button className="flex flex-col items-center justify-center py-2 px-4 rounded-xl bg-slate-50 dark:bg-black/20 hover:bg-primary/10 dark:hover:bg-primary/20 hover:ring-1 ring-primary/50 transition-all group relative">
                        <span className="text-xs font-bold text-slate-400 group-hover:text-primary uppercase tracking-wider mb-1">Damage</span>
-                       <span className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-primary">{weapon.damage}{dmgMod >= 0 ? '+' : ''}{dmgMod}</span>
+                       <span className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-primary">{damageDie}{dmgMod >= 0 ? '+' : ''}{dmgMod}</span>
                        <span className="text-[10px] text-slate-400">Mastery: {weapon.mastery}</span>
                        
                        {/* Active Bonus Indicators */}

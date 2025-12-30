@@ -360,15 +360,15 @@ export const SPECIES_DETAILS: Record<string, DetailData> = {
 
 export const CLASS_DETAILS: Record<string, DetailData> = {
   'Barbarian': { name: 'Barbarian', description: 'Storm with Rage, and wade into hand-to-hand combat.', traits: [{ name: 'Rage', description: 'Bonus Action to enter. Adv on STR checks/saves, Resistance to B/P/S damage, +Rage Damage to STR attacks.' }, { name: 'Unarmored Defense', description: 'AC equals 10 + DEX mod + CON mod when not wearing armor.' }, { name: 'Weapon Mastery', description: 'Unlock special properties (Cleave, Topple) on your chosen weapons.' }] },
-  'Bard': { name: 'Bard', description: 'Perform spells that inspire and heal allies or beguile foes.', traits: [{ name: 'Bardic Inspiration', description: 'Bonus Action to give a die (d6) to an ally to boost d20 rolls.' }, { name: 'Spellcasting', description: 'Cast spells from the Arcane list. Charisma is your casting ability.' }] },
+  'Bard': { name: 'Bard', description: 'Perform spells that inspire and heal allies or beguile foes.', traits: [{ name: 'Bardic Inspiration', description: 'Bonus Action to give a die (d6) to an ally to boost d20 rolls. Lasts 1 hour.' }, { name: 'Spellcasting', description: 'Cast spells from the Arcane list. Charisma is your casting ability.' }] },
   'Cleric': { name: 'Cleric', description: 'Invoke divine magic to heal, bolster, and smite.', traits: [{ name: 'Spellcasting', description: 'Prepare spells from the Divine list daily. Wisdom is your casting ability.' }, { name: 'Divine Order', description: 'Choose Protector (Heavy Armor + Martial Weapons) or Thaumaturge (Extra Cantrip + Religion bonus).' }] },
   'Druid': { name: 'Druid', description: 'Channel nature magic to heal, shape-shift, and control the elements.', traits: [{ name: 'Spellcasting', description: 'Prepare Primal spells. Wisdom is your casting ability.' }, { name: 'Druidic', description: 'You know the secret language of Druids.' }, { name: 'Primal Order', description: 'Choose Magician (Extra Cantrip + Arcana/Nature) or Warden (Medium Armor + Martial Weapons).' }] },
-  'Fighter': { name: 'Fighter', description: 'Master all weapons and armor.', traits: [{ name: 'Fighting Style', description: 'Adopt a style like Archery, Defense, or Great Weapon Fighting.' }, { name: 'Second Wind', description: 'Bonus Action to regain HP (1d10 + level). Uses vary by level.' }, { name: 'Weapon Mastery', description: 'Master 3 weapons to use their tactical properties.' }] },
+  'Fighter': { name: 'Fighter', description: 'Master all weapons and armor.', traits: [{ name: 'Fighting Style', description: 'Adopt a style like Archery, Defense, or Great Weapon Fighting.' }, { name: 'Second Wind', description: 'Bonus Action to regain HP (1d10 + level). Can also use for Tactical Mind on failed checks.' }, { name: 'Weapon Mastery', description: 'Master 3 weapons to use their tactical properties.' }] },
   'Monk': { name: 'Monk', description: 'Dart in and out of melee while striking fast and hard.', traits: [{ name: 'Martial Arts', description: 'Use DEX for Monk weapons/unarmed. Bonus Action unarmed strike. Martial Arts Die.' }, { name: 'Unarmored Defense', description: 'AC equals 10 + DEX mod + WIS mod.' }, { name: 'Monk\'s Focus', description: 'Focus Points to fuel Flurry of Blows, Patient Defense, and Step of the Wind.' }] },
-  'Paladin': { name: 'Paladin', description: 'Smite foes and shield allies with divine and martial might.', traits: [{ name: 'Lay On Hands', description: 'Bonus Action to heal creatures from a pool of HP.' }, { name: 'Spellcasting', description: 'Prepare Divine spells. You can change them after a Long Rest.' }, { name: 'Weapon Mastery', description: 'Master 2 weapons to use their tactical properties.' }, { name: 'Paladin\'s Smite', description: 'Always prepared Divine Smite. Cast once free per Long Rest.' }] },
+  'Paladin': { name: 'Paladin', description: 'Smite foes and shield allies with divine and martial might.', traits: [{ name: 'Lay On Hands', description: 'Bonus Action to heal creatures from a pool of HP (5 x Level).' }, { name: 'Spellcasting', description: 'Prepare Divine spells. You can change them after a Long Rest.' }, { name: 'Weapon Mastery', description: 'Master 2 weapons to use their tactical properties.' }] },
   'Ranger': { name: 'Ranger', description: 'Weave together martial prowess, nature magic, and survival skills.', traits: [{ name: 'Spellcasting', description: 'Prepare Primal spells. Wisdom is your casting ability.' }, { name: 'Favored Enemy', description: 'You always have Hunter\'s Mark prepared. Cast it without a slot (limited use).' }, { name: 'Weapon Mastery', description: 'Master 2 weapons to use their tactical properties.' }] },
   'Rogue': { name: 'Rogue', description: 'Launch deadly Sneak Attacks while avoiding harm through stealth.', traits: [{ name: 'Expertise', description: 'Double proficiency bonus in two chosen skills.' }, { name: 'Sneak Attack', description: 'Deal extra damage (1d6) once per turn if you have Advantage or an ally nearby.' }, { name: 'Weapon Mastery', description: 'Master 2 weapons to use their tactical properties.' }, { name: 'Thieves\' Cant', description: 'A secret mix of dialect, jargon, and code.' }] },
-  'Sorcerer': { name: 'Sorcerer', description: 'Wield magic innate to your being, shaping the power to your will.', traits: [{ name: 'Spellcasting', description: 'Cast Arcane spells spontaneously. Charisma is your casting ability.' }, { name: 'Innate Sorcery', description: 'Bonus Action to activate a rage-like state increasing spell DC and gain Advantage on Sorcerer spell attacks.' }] },
+  'Sorcerer': { name: 'Sorcerer', description: 'Wield magic innate to your being, shaping the power to your will.', traits: [{ name: 'Spellcasting', description: 'Cast Arcane spells spontaneously. Charisma is your casting ability.' }, { name: 'Innate Sorcery', description: 'Bonus Action to activate a state increasing spell DC by 1 and gain Advantage on Sorcerer spell attacks.' }] },
   'Warlock': { name: 'Warlock', description: 'Cast spells derived from occult knowledge.', traits: [{ name: 'Eldritch Invocations', description: 'Customize your powers with unique magical fragments.' }, { name: 'Pact Magic', description: 'Spell slots are always max level and recharge on a Short Rest.' }, { name: 'Magical Cunning', description: 'Regain half your Pact Magic slots once per Long Rest (1-minute rite).' }] },
   'Wizard': { name: 'Wizard', description: 'Study arcane magic and master spells for every purpose.', traits: [{ name: 'Spellcasting', description: 'Learn Arcane spells from scrolls and your spellbook.' }, { name: 'Ritual Adept', description: 'Cast ritual spells from your book without using a spell slot.' }, { name: 'Arcane Recovery', description: 'Regain some spell slots on a Short Rest (once per day).' }] }
 };
@@ -421,7 +421,7 @@ export const SUBCLASS_OPTIONS: Record<string, SubclassData[]> = {
         name: 'College of Dance', 
         description: 'Move in harmony with the cosmos.', 
         features: { 
-            3: [{ name: 'Dazzling Footwork', description: 'Unarmored Defense (10+DEX+CHA). Unarmed Strikes use Bardic Die/Dex. Agile Strikes.' }],
+            3: [{ name: 'Dazzling Footwork', description: 'Unarmored Defense (10+DEX+CHA). Unarmed Strikes use Bardic Die+Dex. Agile Strikes (Unarmed Strike as part of using Bardic Inspiration).' }],
             6: [{ name: 'Inspiring Movement', description: 'Reaction to move yourself and an ally without opportunity attacks.' }, { name: 'Tandem Footwork', description: 'Boost Initiative for you and allies using Bardic Inspiration.' }],
             14: [{ name: 'Leading Evasion', description: 'Share Evasion with allies within 5 ft.' }]
         } 
@@ -430,7 +430,7 @@ export const SUBCLASS_OPTIONS: Record<string, SubclassData[]> = {
         name: 'College of Glamour', 
         description: 'Weave beguiling Feywild magic.', 
         features: { 
-            3: [{ name: 'Beguiling Magic', description: 'Charm Person/Mirror Image prepared. Enchantment/Illusion spells can Charm/Frighten.' }, { name: 'Mantle of Inspiration', description: 'Use Bardic Inspiration to give allies Temp HP and Reaction move.' }],
+            3: [{ name: 'Beguiling Magic', description: 'Charm Person/Mirror Image prepared. Enchantment/Illusion spells can Charm/Frighten.' }, { name: 'Mantle of Inspiration', description: 'Use Bardic Inspiration to give allies Temp HP (2 x roll) and Reaction move.' }],
             6: [{ name: 'Mantle of Majesty', description: 'Cast Command without a spell slot as a Bonus Action.' }],
             14: [{ name: 'Unbreakable Majesty', description: 'Sanctuary-like effect. Enemies attacking you must save or miss/recoil.' }]
         } 
@@ -448,7 +448,7 @@ export const SUBCLASS_OPTIONS: Record<string, SubclassData[]> = {
         name: 'College of Valor', 
         description: 'Sing the deeds of ancient heroes.', 
         features: { 
-            3: [{ name: 'Combat Inspiration', description: 'Allies can use your Inspiration to add to AC or Damage.' }, { name: 'Martial Training', description: 'Proficiency with Martial Weapons and Medium Armor/Shields.' }],
+            3: [{ name: 'Combat Inspiration', description: 'Allies can use your Inspiration to add to AC (Reaction) or Damage.' }, { name: 'Martial Training', description: 'Proficiency with Martial Weapons and Medium Armor/Shields.' }],
             6: [{ name: 'Extra Attack', description: 'Attack twice. Can replace one attack with a cantrip.' }],
             14: [{ name: 'Battle Magic', description: 'Bonus Action attack after casting a spell.' }]
         } 
@@ -459,8 +459,8 @@ export const SUBCLASS_OPTIONS: Record<string, SubclassData[]> = {
         name: 'Life Domain', 
         description: 'Soothe the hurts of the world.', 
         features: { 
-            3: [{ name: 'Disciple of Life', description: 'Healing spells cure extra HP (2 + Spell Level).' }, { name: 'Preserve Life', description: 'Channel Divinity to heal injured creatures up to half HP.' }, { name: 'Life Domain Spells', description: 'Always prepared healing spells (e.g. Cure Wounds, Revivify).' }],
-            6: [{ name: 'Blessed Healer', description: 'When you heal others, you also heal yourself.' }],
+            3: [{ name: 'Disciple of Life', description: 'Healing spells cure extra HP (2 + Spell Level).' }, { name: 'Preserve Life', description: 'Channel Divinity (Magic Action) to heal injured creatures (5 x Lvl HP total) up to half max.' }, { name: 'Life Domain Spells', description: 'Always prepared healing spells (e.g. Cure Wounds, Revivify).' }],
+            6: [{ name: 'Blessed Healer', description: 'When you heal others, you also heal yourself (2 + Spell Level).' }],
             17: [{ name: 'Supreme Healing', description: 'Maximize dice rolls for healing.' }]
         } 
     },
@@ -468,8 +468,8 @@ export const SUBCLASS_OPTIONS: Record<string, SubclassData[]> = {
         name: 'Light Domain', 
         description: 'Bring light to banish darkness.', 
         features: { 
-            3: [{ name: 'Light Domain Spells', description: 'Always prepared fire/light spells (e.g. Fireball, Daylight).' }, { name: 'Radiance of the Dawn', description: 'Channel Divinity to deal Radiant damage to foes within 30ft.' }, { name: 'Warding Flare', description: 'Reaction to impose Disadvantage on an attack against you.' }],
-            6: [{ name: 'Improved Warding Flare', description: 'Use Warding Flare to protect allies.' }],
+            3: [{ name: 'Light Domain Spells', description: 'Always prepared fire/light spells (e.g. Fireball, Daylight).' }, { name: 'Radiance of the Dawn', description: 'Channel Divinity to deal 2d10 + Lvl Radiant damage to foes within 30ft.' }, { name: 'Warding Flare', description: 'Reaction to impose Disadvantage on an attack against you.' }],
+            6: [{ name: 'Improved Warding Flare', description: 'Use Warding Flare to protect allies. Give Temp HP.' }],
             17: [{ name: 'Corona of Light', description: 'Emit sunlight. Enemies have disadvantage on saves vs Fire/Radiant.' }]
         } 
     },
@@ -486,8 +486,8 @@ export const SUBCLASS_OPTIONS: Record<string, SubclassData[]> = {
         name: 'War Domain', 
         description: 'Inspire valor and smite foes.', 
         features: { 
-            3: [{ name: 'War Priest', description: 'Make a weapon attack as a Bonus Action (WIS mod times).' }, { name: 'Guided Strike', description: 'Channel Divinity to add +10 to an attack roll.' }, { name: 'War Domain Spells', description: 'Always prepared combat spells (e.g. Spiritual Weapon, Spirit Guardians).' }],
-            6: [{ name: 'War God\'s Blessing', description: 'Cast Shield of Faith or Spiritual Weapon using Channel Divinity.' }],
+            3: [{ name: 'War Priest', description: 'Make a weapon attack as a Bonus Action (WIS mod times).' }, { name: 'Guided Strike', description: 'Channel Divinity to add +10 to an attack roll (Reaction).' }, { name: 'War Domain Spells', description: 'Always prepared combat spells (e.g. Spiritual Weapon, Spirit Guardians).' }],
+            6: [{ name: 'War God\'s Blessing', description: 'Cast Shield of Faith or Spiritual Weapon using Channel Divinity without concentration.' }],
             17: [{ name: 'Avatar of Battle', description: 'Resistance to Bludgeoning, Piercing, and Slashing damage.' }]
         } 
     }
@@ -507,10 +507,10 @@ export const SUBCLASS_OPTIONS: Record<string, SubclassData[]> = {
         name: 'Circle of the Moon', 
         description: 'Adopt animal forms to guard the wilds.', 
         features: { 
-            3: [{ name: 'Circle Forms', description: 'Combat Wild Shape as Bonus Action. AC 13+Wis. Temp HP = 3*Level.' }, { name: 'Circle of the Moon Spells', description: 'Always prepared moon spells (e.g. Moonbeam).' }],
-            6: [{ name: 'Improved Circle Forms', description: 'Attacks deal Radiant damage. Add Wis to Con saves.' }],
-            10: [{ name: 'Moonlight Step', description: 'Bonus Action teleport.' }],
-            14: [{ name: 'Lunar Form', description: 'Extra Radiant damage. Teleport allies with Moonlight Step.' }]
+            3: [{ name: 'Circle Forms', description: 'Combat Wild Shape as Bonus Action. AC 13+Wis. Temp HP = 3 x Level.' }, { name: 'Circle of the Moon Spells', description: 'Always prepared moon spells (e.g. Moonbeam).' }],
+            6: [{ name: 'Improved Circle Forms', description: 'Attacks deal Radiant damage option. Add Wis to Con saves.' }],
+            10: [{ name: 'Moonlight Step', description: 'Bonus Action teleport 30ft.' }],
+            14: [{ name: 'Lunar Form', description: 'Extra 2d10 Radiant damage. Teleport allies with Moonlight Step.' }]
         } 
     },
     { 
@@ -518,7 +518,7 @@ export const SUBCLASS_OPTIONS: Record<string, SubclassData[]> = {
         description: 'Become one with tides and storms.', 
         features: { 
             3: [{ name: 'Circle of the Sea Spells', description: 'Always prepared storm/water spells (e.g. Shatter, Lightning Bolt).' }, { name: 'Wrath of the Sea', description: 'Expend Wild Shape to emanate storm spray (Cold Dmg + Push).' }],
-            6: [{ name: 'Aquatic Affinity', description: 'Swim Speed. Emanation range increases.' }],
+            6: [{ name: 'Aquatic Affinity', description: 'Swim Speed. Emanation range increases to 10ft.' }],
             10: [{ name: 'Stormborn', description: 'Fly Speed. Resistance to Cold, Lightning, Thunder.' }],
             14: [{ name: 'Oceanic Gift', description: 'Manifest emanation around an ally.' }]
         } 
@@ -527,7 +527,7 @@ export const SUBCLASS_OPTIONS: Record<string, SubclassData[]> = {
         name: 'Circle of the Stars', 
         description: 'Harness secrets hidden in constellations.', 
         features: { 
-            3: [{ name: 'Star Map', description: 'Guidance/Guiding Bolt prepared. Free Guiding Bolts.' }, { name: 'Starry Form', description: 'Expend Wild Shape to enter Archer (Bonus Attack), Chalice (Heal), or Dragon (Concentration) form.' }],
+            3: [{ name: 'Star Map', description: 'Guidance/Guiding Bolt prepared. Free Guiding Bolts.' }, { name: 'Starry Form', description: 'Expend Wild Shape to enter Archer (Bonus Attack 1d8+Wis), Chalice (Heal extra 1d8+Wis), or Dragon (Min 10 on Concentration/Int/Wis checks) form.' }],
             6: [{ name: 'Cosmic Omen', description: 'Roll d6 after Long Rest. Weal (add d6) or Woe (subtract d6) reaction.' }],
             10: [{ name: 'Twinkling Constellations', description: 'Forms improve (2d8 damage/healing, Fly Speed).' }],
             14: [{ name: 'Full of Stars', description: 'Resistance to Bludgeoning, Piercing, and Slashing damage.' }]
@@ -539,7 +539,7 @@ export const SUBCLASS_OPTIONS: Record<string, SubclassData[]> = {
         name: 'Battle Master', 
         description: 'Master sophisticated battle maneuvers.', 
         features: { 
-            3: [{ name: 'Combat Superiority', description: 'Gain Superiority Dice (d8) and Maneuvers (e.g., Trip Attack, Parry).' }, { name: 'Student of War', description: 'Proficiency with one Artisan Tool and one Skill.' }],
+            3: [{ name: 'Combat Superiority', description: 'Gain 4 Superiority Dice (d8) and 3 Maneuvers (e.g., Trip Attack, Parry).' }, { name: 'Student of War', description: 'Proficiency with one Artisan Tool and one Skill.' }],
             7: [{ name: 'Know Your Enemy', description: 'Learn immunities, resistances, or vulnerabilities of a target.' }],
             10: [{ name: 'Improved Combat Superiority', description: 'Superiority Dice become d10s.' }],
             15: [{ name: 'Relentless', description: 'Use a free d8 instead of expending a die once per turn.' }],
@@ -564,7 +564,7 @@ export const SUBCLASS_OPTIONS: Record<string, SubclassData[]> = {
             3: [{ name: 'Spellcasting', description: 'Cast Wizard spells (Level 1+).' }, { name: 'War Bond', description: 'Bond with 2 weapons, summon them as Bonus Action.' }],
             7: [{ name: 'War Magic', description: 'Replace one attack with a Cantrip.' }],
             10: [{ name: 'Eldritch Strike', description: 'Hit imposes Disadvantage on next save against your spell.' }],
-            15: [{ name: 'Arcane Charge', description: 'Teleport when using Action Surge.' }],
+            15: [{ name: 'Arcane Charge', description: 'Teleport 30ft when using Action Surge.' }],
             18: [{ name: 'Improved War Magic', description: 'Replace two attacks with a Level 1 or 2 Spell.' }]
         } 
     },
@@ -596,7 +596,7 @@ export const SUBCLASS_OPTIONS: Record<string, SubclassData[]> = {
         description: 'Harness shadow power for stealth and subterfuge.', 
         features: { 
             3: [{ name: 'Shadow Arts', description: 'Expend Focus to cast Darkness. Gain Darkvision (or upgrade it). Know Minor Illusion.' }],
-            6: [{ name: 'Shadow Step', description: 'Bonus Action teleport between shadows. Advantage on next attack.' }],
+            6: [{ name: 'Shadow Step', description: 'Bonus Action teleport 60ft between shadows. Advantage on next attack.' }],
             11: [{ name: 'Improved Shadow Step', description: 'Free Shadow Step. Attack after teleporting.' }],
             17: [{ name: 'Cloak of Shadows', description: 'Invisibility and phasing through objects.' }]
         } 
@@ -606,7 +606,7 @@ export const SUBCLASS_OPTIONS: Record<string, SubclassData[]> = {
         description: 'Wield strikes and bursts of elemental power.', 
         features: { 
             3: [{ name: 'Elemental Attunement', description: 'Expend Focus for +10ft Reach and Elemental damage/push/pull.' }, { name: 'Manipulate Elements', description: 'Know Elementalism spell.' }],
-            6: [{ name: 'Elemental Burst', description: 'AoE elemental damage explosion.' }],
+            6: [{ name: 'Elemental Burst', description: 'AoE elemental damage explosion (20ft sphere).' }],
             11: [{ name: 'Stride of the Elements', description: 'Fly and Swim speeds equal to Speed.' }],
             17: [{ name: 'Elemental Epitome', description: 'Resistance, Speed boost, Extra damage.' }]
         } 
@@ -616,7 +616,7 @@ export const SUBCLASS_OPTIONS: Record<string, SubclassData[]> = {
         description: 'Master unarmed combat techniques.', 
         features: { 
             3: [{ name: 'Open Hand Technique', description: 'Flurry of Blows adds Addle (No Reactions), Push (15ft), or Topple (Prone).' }],
-            6: [{ name: 'Wholeness of Body', description: 'Bonus Action heal.' }],
+            6: [{ name: 'Wholeness of Body', description: 'Bonus Action heal (Martial Arts die + Wis).' }],
             11: [{ name: 'Fleet Step', description: 'Free Step of the Wind after other Bonus Actions.' }],
             17: [{ name: 'Quivering Palm', description: 'Set up lethal vibrations. End for 10d12 Force damage.' }]
         } 
@@ -627,7 +627,7 @@ export const SUBCLASS_OPTIONS: Record<string, SubclassData[]> = {
         name: 'Oath of Devotion', 
         description: 'Uphold the ideals of justice and order.', 
         features: { 
-            3: [{ name: 'Sacred Weapon', description: 'Channel Divinity to add CHA mod to attack rolls and deal Radiant damage.' }, { name: 'Oath of Devotion Spells', description: 'Always prepared protection/holy spells.' }],
+            3: [{ name: 'Sacred Weapon', description: 'Channel Divinity to add CHA mod to attack rolls and deal Radiant damage. Light.' }, { name: 'Oath of Devotion Spells', description: 'Always prepared protection/holy spells.' }],
             7: [{ name: 'Aura of Devotion', description: 'Immunity to Charm for you and allies.' }],
             15: [{ name: 'Smite of Protection', description: 'Divine Smite grants Half Cover.' }],
             20: [{ name: 'Holy Nimbus', description: 'Radiant damage aura. Advantage on saves vs Fiends/Undead.' }]
