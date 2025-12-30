@@ -16,6 +16,7 @@ import {
 } from '../Data/characterOptions';
 import { FEAT_OPTIONS } from '../Data/feats';
 import { SKILL_LIST } from '../Data/skills';
+import { TRINKETS } from '../Data/items';
 
 interface CreatorStepsProps {
   onBack: () => void;
@@ -25,6 +26,19 @@ interface CreatorStepsProps {
 const POINT_BUY_COSTS: Record<number, number> = {
   8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9
 };
+
+const SectionSeparator = ({ label }: { label: string }) => (
+  <div className="relative py-6 flex items-center justify-center w-full px-6">
+    <div className="absolute inset-0 flex items-center px-6">
+      <div className="w-full border-t border-slate-200 dark:border-white/10"></div>
+    </div>
+    <div className="relative flex justify-center">
+      <span className="bg-background-light dark:bg-background-dark px-4 text-xs font-bold text-slate-400 uppercase tracking-widest border border-slate-200 dark:border-white/10 rounded-full py-1 shadow-sm">
+        {label}
+      </span>
+    </div>
+  </div>
+);
 
 const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   const [step, setStep] = useState<CreatorStep>(1);
@@ -37,7 +51,8 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   const [selectedSpecies, setSelectedSpecies] = useState(SPECIES_LIST[0]);
   const [selectedBackground, setSelectedBackground] = useState(Object.keys(BACKGROUNDS_DATA)[0]);
   const [selectedAlignment, setSelectedAlignment] = useState(ALIGNMENTS[0]);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(''); 
+  const [selectedLanguage1, setSelectedLanguage1] = useState<string>(''); 
+  const [selectedLanguage2, setSelectedLanguage2] = useState<string>(''); 
   const [selectedFeat, setSelectedFeat] = useState<string>(''); 
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   
@@ -52,6 +67,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   const backgroundData = BACKGROUNDS_DATA[selectedBackground];
   const classSkillOptions = CLASS_SKILL_DATA[selectedClass];
   const availableSubclasses = useMemo(() => SUBCLASS_OPTIONS[selectedClass] || [], [selectedClass]);
+  const selectedSubclassData = useMemo(() => availableSubclasses.find(s => s.name === selectedSubclass), [availableSubclasses, selectedSubclass]);
 
   // Calculate Final Stats (Base + Background Bonuses)
   const finalStats = useMemo(() => {
@@ -165,6 +181,11 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     return maxHP;
   };
 
+  const generateTrinket = () => {
+    const randomIndex = Math.floor(Math.random() * TRINKETS.length);
+    return `Trinket: ${TRINKETS[randomIndex]}`;
+  }
+
   const newCharacter: Character = {
     id: `c-${Date.now()}`,
     name: name || 'Heroe',
@@ -181,8 +202,9 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     profBonus: Math.ceil(1 + (level / 4)), // Approximate PB calculation
     stats: finalStats,
     skills: [...(backgroundData?.skills || []), ...selectedSkills],
-    languages: ['Common', selectedLanguage].filter(Boolean),
+    languages: ['Common', selectedLanguage1, selectedLanguage2].filter(Boolean),
     feats: [backgroundData?.feat, speciesData?.name === 'Human' ? selectedFeat : undefined].filter((f): f is string => !!f),
+    inventory: [generateTrinket(), ...(backgroundData?.equipment || [])],
     imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuAZr-RDRTUNGSsd_-BR5U-r2yLkQsbKsJ6mAkTpEGl0e4IZW86PQSc2se3iegp_aML54kIgoYOyDhlwHDiNPfKasvRE8Wymti23tWDRa-QL1JZUqBNPNDJzOj5AknxSMaVS0FH7GW9srFK1u5uzt7Nb5M5LvPbaZUGy484PX685rHODXkI9CwFaha_RbMGbh-LOIz8R0OqlhyI9CDp--2zy5UhpgJ8GLuhKjmJsjCWKb-F8PJWpJtTk_3AmSP79rbDxmeLWsGsP61hv"
   };
 
@@ -254,7 +276,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                     </div>
                 </div>
 
-                <div className="h-px w-full bg-slate-200 dark:bg-surface-dark mb-4"></div>
+                <SectionSeparator label="Clase" />
 
                 <div className="mb-4">
                     <div className="px-6 flex justify-between items-end mb-3">
@@ -365,9 +387,10 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                 {/* Subclass Selection (Level 3+) */}
                 {level >= 3 && availableSubclasses.length > 0 && (
                     <div className="mb-4 animate-fadeIn">
-                        <div className="px-6 flex justify-between items-end mb-3">
-                            <h3 className="text-lg font-bold">Subclase</h3>
-                            <span className="text-primary text-xs font-medium max-w-[50%] truncate">{selectedSubclass}</span>
+                        <SectionSeparator label="Subclase" />
+                        <div className="px-6 flex flex-col items-center mb-4 text-center">
+                            <h3 className="text-xl font-bold">Elige tu Camino</h3>
+                            <span className="text-primary text-sm font-medium mt-1 max-w-[80%] truncate">{selectedSubclass || 'Selecciona una especialización'}</span>
                         </div>
                         
                         <div className="w-full relative group">
@@ -387,14 +410,14 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                                 onChange={() => setSelectedSubclass(sub.name)}
                                             />
                                             <div className={`
-                                                w-48 h-auto min-h-[140px] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 ease-out border-2
+                                                w-48 h-auto min-h-[140px] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 ease-out border-2 text-center
                                                 ${isSelected 
                                                     ? 'bg-white dark:bg-surface-dark border-primary shadow-[0_10px_30px_-10px_rgba(53,158,255,0.4)] scale-105' 
                                                     : 'bg-white/60 dark:bg-surface-dark/60 border-transparent hover:border-slate-300 dark:hover:border-white/10 hover:bg-white dark:hover:bg-surface-dark shadow-sm'
                                                 }
                                             `}>
-                                                <div>
-                                                    <span className={`block font-bold text-sm leading-tight mb-1 ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+                                                <div className="flex flex-col items-center w-full">
+                                                    <span className={`block font-bold text-sm leading-tight mb-2 ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
                                                         {sub.name}
                                                     </span>
                                                     <span className="block text-[10px] text-slate-500 leading-snug line-clamp-4">
@@ -415,11 +438,32 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                 <div className="w-2 shrink-0"></div>
                             </div>
                         </div>
+
+                        {selectedSubclassData && (
+                            <div className="px-6 mt-4 space-y-3">
+                                <div className="flex justify-center">
+                                    <span className="text-[10px] font-bold uppercase text-slate-400 bg-slate-100 dark:bg-white/5 px-3 py-1 rounded-full tracking-wider">Rasgos de {selectedSubclassData.name}</span>
+                                </div>
+                                {Object.entries(selectedSubclassData.features).flatMap(([lvl, traits]) => {
+                                    if (Number(lvl) > level) return [];
+                                    return traits.map(trait => (
+                                        <div key={trait.name} className="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm text-center">
+                                            <div className="flex flex-col items-center gap-1 mb-2">
+                                                <p className="font-bold text-sm text-slate-900 dark:text-white">{trait.name}</p>
+                                                <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">Nivel {lvl}</span>
+                                            </div>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs mx-auto">{trait.description}</p>
+                                        </div>
+                                    ));
+                                })}
+                            </div>
+                        )}
                     </div>
                 )}
 
-                <div className="px-6 space-y-3">
-                    <div>
+                <div className="space-y-3">
+                    <SectionSeparator label="Raza" />
+                    <div className="px-6">
                         <div className="flex justify-between items-end mb-3">
                              <h3 className="text-lg font-bold">Raza</h3>
                              <span className="text-primary text-xs font-medium">{speciesData?.name}</span>
@@ -429,7 +473,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                             <div className="absolute top-0 bottom-0 left-0 w-12 bg-gradient-to-r from-background-light to-transparent dark:from-background-dark z-10 pointer-events-none"></div>
                             <div className="absolute top-0 bottom-0 right-0 w-12 bg-gradient-to-l from-background-light to-transparent dark:from-background-dark z-10 pointer-events-none"></div>
 
-                            <div className="flex overflow-x-auto gap-4 px-6 py-4 no-scrollbar w-full snap-x snap-mandatory">
+                            <div className="flex overflow-x-auto gap-4 py-4 no-scrollbar w-full snap-x snap-mandatory">
                                 {SPECIES_LIST.map((s) => {
                                     const ui = SPECIES_UI_MAP[s] || { icon: 'face', color: 'text-slate-400' };
                                     const isSelected = selectedSpecies === s;
@@ -485,7 +529,8 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                         </div>
                     </div>
 
-                    <div>
+                    <SectionSeparator label="Trasfondo" />
+                    <div className="px-6">
                         <div className="flex justify-between items-end mb-3">
                              <h3 className="text-lg font-bold">Trasfondo</h3>
                              <span className="text-primary text-xs font-medium">{selectedBackground}</span>
@@ -495,7 +540,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                             <div className="absolute top-0 bottom-0 left-0 w-12 bg-gradient-to-r from-background-light to-transparent dark:from-background-dark z-10 pointer-events-none"></div>
                             <div className="absolute top-0 bottom-0 right-0 w-12 bg-gradient-to-l from-background-light to-transparent dark:from-background-dark z-10 pointer-events-none"></div>
 
-                            <div className="flex overflow-x-auto gap-4 px-6 py-4 no-scrollbar w-full snap-x snap-mandatory">
+                            <div className="flex overflow-x-auto gap-4 py-4 no-scrollbar w-full snap-x snap-mandatory">
                                 {Object.keys(BACKGROUNDS_DATA).map((b) => {
                                     const ui = BACKGROUND_UI_MAP[b] || { icon: 'person', color: 'text-slate-400' };
                                     const bgData = BACKGROUNDS_DATA[b];
@@ -637,15 +682,25 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                     </div>
                 </div>
 
-                 <div>
-                    <h3 className="text-xl font-bold mb-3">Idioma Adicional</h3>
+                 <div className="space-y-3">
+                    <h3 className="text-xl font-bold mb-1">Idiomas Adicionales (2)</h3>
                     <select 
-                        value={selectedLanguage}
-                        onChange={(e) => setSelectedLanguage(e.target.value)}
+                        value={selectedLanguage1}
+                        onChange={(e) => setSelectedLanguage1(e.target.value)}
                         className="w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-primary/50"
                     >
-                        <option value="" disabled>Selecciona un idioma...</option>
-                        {LANGUAGES.filter(l => l !== 'Common').map(l => (
+                        <option value="" disabled>Selecciona el 1er idioma...</option>
+                        {LANGUAGES.filter(l => l !== 'Common' && l !== selectedLanguage2).map(l => (
+                            <option key={l} value={l}>{l}</option>
+                        ))}
+                    </select>
+                    <select 
+                        value={selectedLanguage2}
+                        onChange={(e) => setSelectedLanguage2(e.target.value)}
+                        className="w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                        <option value="" disabled>Selecciona el 2do idioma...</option>
+                        {LANGUAGES.filter(l => l !== 'Common' && l !== selectedLanguage1).map(l => (
                             <option key={l} value={l}>{l}</option>
                         ))}
                     </select>
