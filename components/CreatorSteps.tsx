@@ -11,7 +11,8 @@ import {
   SPECIES_DETAILS,
   CLASS_DETAILS,
   HIT_DIE,
-  CLASS_STAT_PRIORITIES
+  CLASS_STAT_PRIORITIES,
+  SUBCLASS_OPTIONS
 } from '../Data/characterOptions';
 import { FEAT_OPTIONS } from '../Data/feats';
 import { SKILL_LIST } from '../Data/skills';
@@ -30,7 +31,9 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   
   // Character State
   const [name, setName] = useState('');
+  const [level, setLevel] = useState<number>(1);
   const [selectedClass, setSelectedClass] = useState(CLASS_LIST[0]);
+  const [selectedSubclass, setSelectedSubclass] = useState<string>('');
   const [selectedSpecies, setSelectedSpecies] = useState(SPECIES_LIST[0]);
   const [selectedBackground, setSelectedBackground] = useState(Object.keys(BACKGROUNDS_DATA)[0]);
   const [selectedAlignment, setSelectedAlignment] = useState(ALIGNMENTS[0]);
@@ -48,6 +51,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   const classData = CLASS_DETAILS[selectedClass];
   const backgroundData = BACKGROUNDS_DATA[selectedBackground];
   const classSkillOptions = CLASS_SKILL_DATA[selectedClass];
+  const availableSubclasses = useMemo(() => SUBCLASS_OPTIONS[selectedClass] || [], [selectedClass]);
 
   // Calculate Final Stats (Base + Background Bonuses)
   const finalStats = useMemo(() => {
@@ -72,34 +76,38 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     }
   }, [selectedSpecies, speciesData, selectedFeat]);
 
-  // Auto-scroll to selected class
+  // Auto-scroll logic (Reduced)
   useEffect(() => {
     const card = document.getElementById(`class-card-${selectedClass}`);
-    if (card) {
-      card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    }
+    if (card) card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   }, [selectedClass]);
 
-  // Auto-scroll to selected species
   useEffect(() => {
     const card = document.getElementById(`species-card-${selectedSpecies}`);
-    if (card) {
-      card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    }
+    if (card) card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   }, [selectedSpecies]);
 
-  // Auto-scroll to selected background
   useEffect(() => {
     const card = document.getElementById(`background-card-${selectedBackground}`);
-    if (card) {
-      card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    }
+    if (card) card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   }, [selectedBackground]);
 
-  // Reset skills when class changes
+  // Removed level and subclass auto-scroll effects to prevent jumping
+
+  // Reset skills/subclass when class changes
   useEffect(() => {
     setSelectedSkills([]);
+    setSelectedSubclass('');
   }, [selectedClass]);
+
+  // Auto-select first subclass if level >= 3 and none selected
+  useEffect(() => {
+    if (level >= 3 && !selectedSubclass && availableSubclasses.length > 0) {
+        setSelectedSubclass(availableSubclasses[0].name);
+    } else if (level < 3) {
+        setSelectedSubclass('');
+    }
+  }, [level, availableSubclasses, selectedSubclass]);
 
   // Reset stats to safe defaults when method changes
   useEffect(() => {
@@ -144,20 +152,33 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     return true;
   };
 
+  // HP Calculation
+  const calculateMaxHP = () => {
+    const conMod = Math.floor((finalStats.CON - 10) / 2);
+    const hitDie = HIT_DIE[selectedClass];
+    // Level 1: Full Hit Die + CON
+    let maxHP = hitDie + conMod;
+    // Level > 1: Avg Hit Die (Die/2 + 1) + CON
+    if (level > 1) {
+        maxHP += (Math.floor(hitDie / 2) + 1 + conMod) * (level - 1);
+    }
+    return maxHP;
+  };
+
   const newCharacter: Character = {
     id: `c-${Date.now()}`,
     name: name || 'Heroe',
-    level: 1,
+    level: level,
     class: selectedClass,
-    subclass: '',
+    subclass: selectedSubclass,
     species: selectedSpecies,
     background: selectedBackground,
     alignment: selectedAlignment,
-    hp: { current: 10 + Math.floor((finalStats.CON - 10) / 2), max: 10 + Math.floor((finalStats.CON - 10) / 2), temp: 0 },
+    hp: { current: calculateMaxHP(), max: calculateMaxHP(), temp: 0 },
     ac: 10 + Math.floor((finalStats.DEX - 10) / 2),
     init: Math.floor((finalStats.DEX - 10) / 2),
     speed: speciesData?.speed || 30,
-    profBonus: 2,
+    profBonus: Math.ceil(1 + (level / 4)), // Approximate PB calculation
     stats: finalStats,
     skills: [...(backgroundData?.skills || []), ...selectedSkills],
     languages: ['Common', selectedLanguage].filter(Boolean),
@@ -212,7 +233,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Define la identidad de tu héroe.</p>
                 </div>
 
-                <div className="px-6 mb-4 flex items-end gap-4">
+                <div className="px-6 mb-4 flex items-center gap-4">
                     <div className="relative shrink-0 group cursor-pointer">
                         <div className="w-20 h-20 rounded-2xl bg-surface-dark border-2 border-dashed border-slate-600 flex items-center justify-center overflow-hidden hover:border-primary transition-colors">
                             <span className="material-symbols-outlined text-3xl text-slate-500 group-hover:text-primary transition-colors">add_a_photo</span>
@@ -222,7 +243,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                         </div>
                     </div>
                     <div className="flex-1">
-                        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Nombre del Personaje</label>
+                        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Nombre</label>
                         <input 
                             value={name}
                             onChange={(e) => setName(e.target.value)}
@@ -321,7 +342,81 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                             ))}
                         </div>
                     </div>
+
+                    <div className="px-6 mt-4">
+                        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Nivel</label>
+                        <div className="relative">
+                            <select
+                                value={level}
+                                onChange={(e) => setLevel(Number(e.target.value))}
+                                className="w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-xl pl-4 pr-10 py-3 text-base font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 appearance-none transition-all shadow-sm"
+                            >
+                                {Array.from({length: 20}, (_, i) => i + 1).map(lvl => (
+                                    <option key={lvl} value={lvl}>Nivel {lvl}</option>
+                                ))}
+                            </select>
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center text-slate-500 dark:text-slate-400">
+                                <span className="material-symbols-outlined">unfold_more</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                {/* Subclass Selection (Level 3+) */}
+                {level >= 3 && availableSubclasses.length > 0 && (
+                    <div className="mb-4 animate-fadeIn">
+                        <div className="px-6 flex justify-between items-end mb-3">
+                            <h3 className="text-lg font-bold">Subclase</h3>
+                            <span className="text-primary text-xs font-medium max-w-[50%] truncate">{selectedSubclass}</span>
+                        </div>
+                        
+                        <div className="w-full relative group">
+                            <div className="absolute top-0 bottom-0 left-0 w-12 bg-gradient-to-r from-background-light to-transparent dark:from-background-dark z-10 pointer-events-none"></div>
+                            <div className="absolute top-0 bottom-0 right-0 w-12 bg-gradient-to-l from-background-light to-transparent dark:from-background-dark z-10 pointer-events-none"></div>
+
+                            <div className="flex overflow-x-auto gap-4 px-6 py-4 no-scrollbar w-full snap-x snap-mandatory">
+                                {availableSubclasses.map((sub) => {
+                                    const isSelected = selectedSubclass === sub.name;
+                                    return (
+                                        <label key={sub.name} id={`subclass-card-${sub.name}`} className="relative shrink-0 cursor-pointer group/card snap-center scroll-m-6">
+                                            <input 
+                                                className="peer sr-only" 
+                                                name="subclass" 
+                                                type="radio" 
+                                                checked={isSelected}
+                                                onChange={() => setSelectedSubclass(sub.name)}
+                                            />
+                                            <div className={`
+                                                w-48 h-auto min-h-[140px] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 ease-out border-2
+                                                ${isSelected 
+                                                    ? 'bg-white dark:bg-surface-dark border-primary shadow-[0_10px_30px_-10px_rgba(53,158,255,0.4)] scale-105' 
+                                                    : 'bg-white/60 dark:bg-surface-dark/60 border-transparent hover:border-slate-300 dark:hover:border-white/10 hover:bg-white dark:hover:bg-surface-dark shadow-sm'
+                                                }
+                                            `}>
+                                                <div>
+                                                    <span className={`block font-bold text-sm leading-tight mb-1 ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+                                                        {sub.name}
+                                                    </span>
+                                                    <span className="block text-[10px] text-slate-500 leading-snug line-clamp-4">
+                                                        {sub.description}
+                                                    </span>
+                                                </div>
+
+                                                <div className={`
+                                                    absolute top-3 right-3 w-5 h-5 rounded-full bg-primary flex items-center justify-center text-black shadow-sm transition-all duration-300
+                                                    ${isSelected ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-90'}
+                                                `}>
+                                                    <span className="material-symbols-outlined text-xs font-bold">check</span>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    );
+                                })}
+                                <div className="w-2 shrink-0"></div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="px-6 space-y-3">
                     <div>
@@ -403,6 +498,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                             <div className="flex overflow-x-auto gap-4 px-6 py-4 no-scrollbar w-full snap-x snap-mandatory">
                                 {Object.keys(BACKGROUNDS_DATA).map((b) => {
                                     const ui = BACKGROUND_UI_MAP[b] || { icon: 'person', color: 'text-slate-400' };
+                                    const bgData = BACKGROUNDS_DATA[b];
                                     const isSelected = selectedBackground === b;
                                     return (
                                         <label key={b} id={`background-card-${b}`} className="relative shrink-0 cursor-pointer group/card snap-center scroll-m-6">
@@ -414,16 +510,17 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                                 onChange={() => setSelectedBackground(b)}
                                             />
                                             <div className={`
-                                                w-32 h-24 rounded-2xl p-3 flex flex-col items-center justify-center gap-2 transition-all duration-300 ease-out border-2
+                                                w-36 h-28 rounded-2xl p-3 flex flex-col items-center justify-center gap-1 transition-all duration-300 ease-out border-2
                                                 ${isSelected 
                                                     ? 'bg-white dark:bg-surface-dark border-primary shadow-lg scale-105' 
                                                     : 'bg-white/70 dark:bg-surface-dark/70 border-transparent hover:border-slate-300 dark:hover:border-white/10 hover:bg-white dark:hover:bg-surface-dark'
                                                 }
                                             `}>
                                                 <span className={`material-symbols-outlined text-2xl ${ui.color} ${isSelected ? 'scale-110' : ''} transition-transform`}>{ui.icon}</span>
-                                                <span className={`font-bold text-xs text-center leading-tight ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
+                                                <span className={`font-bold text-xs text-center leading-tight mt-1 ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
                                                     {b}
                                                 </span>
+                                                <span className="text-[9px] font-bold text-primary uppercase tracking-wider text-center">{bgData?.scores.join(' ')}</span>
                                                 <div className={`
                                                     absolute top-2 right-2 w-4 h-4 rounded-full bg-primary flex items-center justify-center text-black shadow-sm transition-all duration-300
                                                     ${isSelected ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}
@@ -623,12 +720,18 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
             <div className="px-6 py-4 space-y-6">
                  {/* Header Identity */}
                  <div className="flex flex-col items-center">
-                    <div className="w-24 h-24 rounded-3xl bg-slate-200 dark:bg-surface-light mb-3 shadow-lg border-2 border-white dark:border-white/10" style={{backgroundImage: `url(${newCharacter.imageUrl})`, backgroundSize: 'cover'}}></div>
+                    <div className="w-24 h-24 rounded-3xl bg-slate-200 dark:bg-surface-light mb-3 shadow-lg border-2 border-white dark:border-white/10" style={{backgroundImage: `url(${newCharacter.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
                     <h2 className="text-3xl font-bold text-center text-slate-900 dark:text-white leading-tight">{newCharacter.name}</h2>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex flex-wrap justify-center items-center gap-2 mt-1">
                         <span className="text-sm font-bold text-primary uppercase tracking-wide">{newCharacter.species}</span>
                         <span className="w-1 h-1 rounded-full bg-slate-400"></span>
                         <span className="text-sm font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">{newCharacter.class}</span>
+                        {newCharacter.subclass && (
+                            <>
+                                <span className="w-1 h-1 rounded-full bg-slate-400"></span>
+                                <span className="text-sm font-bold text-slate-500 dark:text-slate-400 truncate max-w-[150px]">{newCharacter.subclass}</span>
+                            </>
+                        )}
                         <span className="w-1 h-1 rounded-full bg-slate-400"></span>
                         <span className="text-sm font-bold text-slate-500">Lvl {newCharacter.level}</span>
                     </div>
