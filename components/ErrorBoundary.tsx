@@ -1,4 +1,5 @@
 
+
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 interface Props {
@@ -11,6 +12,14 @@ interface State {
 }
 
 class ErrorBoundary extends Component<Props, State> {
+  // Fix for TS error: Property 'props' does not exist on type 'ErrorBoundary'
+  public props: Props;
+
+  constructor(props: Props) {
+    super(props);
+    this.props = props;
+  }
+
   public state: State = {
     hasError: false,
     error: null

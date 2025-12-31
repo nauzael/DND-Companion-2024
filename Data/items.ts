@@ -13,7 +13,7 @@ export const MASTERY_DESCRIPTIONS: Record<string, string> = {
   '-': 'No mastery property.'
 };
 
-// --- WEAPONS ---
+// --- WEAPONS (Updated per PHB 2024 Table) ---
 export const WEAPONS_DB: Record<string, WeaponData> = {
     // Simple Melee
     'Club': { name: 'Club', type: 'Weapon', category: 'Simple', rangeType: 'Melee', damage: '1d4', damageType: 'Bludgeoning', properties: ['Light'], mastery: 'Slow', weight: 2, cost: '1 SP' }, 

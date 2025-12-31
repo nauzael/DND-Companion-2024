@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Character } from '../types';
 
@@ -75,7 +76,7 @@ const CharacterList: React.FC<CharacterListProps> = ({ characters, onCreate, onS
       </main>
 
       {/* Floating Action Button */}
-      <div className="fixed bottom-8 right-6 z-30 md:absolute md:bottom-8 md:right-6">
+      <div className="fixed bottom-8 right-6 z-30">
         <button 
             onClick={onCreate}
             className="group flex items-center justify-center gap-2 h-14 pl-4 pr-6 bg-primary text-background-dark rounded-full shadow-[0_8px_30px_rgb(53,158,255,0.4)] hover:scale-105 hover:bg-white hover:text-background-dark transition-all duration-300"
