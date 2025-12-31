@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Character, CreatorStep, Ability, Trait, SubclassData } from '../types';
 import { MAP_TEXTURE, CLASS_UI_MAP, SPECIES_UI_MAP, BACKGROUND_UI_MAP } from '../constants';
@@ -494,6 +495,8 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     background: selectedBackground,
     alignment: selectedAlignment,
     hp: { current: calculateMaxHP(), max: calculateMaxHP(), temp: 0 },
+    // Initialize focus for Monks
+    focus: selectedClass === 'Monk' ? { current: level, max: level } : undefined,
     ac: calculateAC(),
     init: Math.floor((finalStats.DEX - 10) / 2),
     speed: calculateSpeed(),
