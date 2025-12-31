@@ -10,16 +10,11 @@ interface State {
   error: Error | null;
 }
 
-// Fixed: Using Component directly from named imports and adding an explicit constructor 
-// to ensure type information for props and state is correctly inherited and resolved in all TS environments.
 class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: null
-    };
-  }
+  public state: State = {
+    hasError: false,
+    error: null
+  };
 
   public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
@@ -30,9 +25,6 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public render() {
-    // Fixed: Destructured children from this.props to ensure property existence is recognized by the compiler
-    const { children } = this.props;
-
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-[#0F172A] text-white p-6 text-center font-display">
@@ -63,7 +55,7 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return children;
+    return this.props.children;
   }
 }
 

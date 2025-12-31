@@ -16,7 +16,6 @@ export interface Character {
   background: string;
   alignment?: string;
   hp: { current: number; max: number; temp: number };
-  focus?: { current: number; max: number }; // Monk Resource
   ac: number; // Base or override, calculated usually
   init: number;
   speed: number;
