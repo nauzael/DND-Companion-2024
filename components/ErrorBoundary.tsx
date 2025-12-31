@@ -10,7 +10,8 @@ interface State {
   error: Error | null;
 }
 
-class ErrorBoundary extends Component<Props, State> {
+// Fixed: Explicitly using React.Component to ensure type information is correctly inherited in all TypeScript environments
+class ErrorBoundary extends React.Component<Props, State> {
   public state: State = {
     hasError: false,
     error: null
@@ -25,6 +26,9 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public render() {
+    // Fixed: Destructured children from this.props to avoid potential context issues and help TypeScript inference
+    const { children } = this.props;
+
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-[#0F172A] text-white p-6 text-center font-display">
@@ -55,7 +59,7 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.props.children;
+    return children;
   }
 }
 
