@@ -230,6 +230,25 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
       setUsedSlots({});
   };
 
+  const castSpell = (level: number) => {
+      if (level === 0) return; // Cantrips don't consume slots
+      
+      const totalSlots = getSlots(effectiveCasterType, character.level, level);
+      let found = false;
+      // Find first unused slot
+      for (let i = 0; i < totalSlots; i++) {
+          if (!usedSlots[`${level}-${i}`]) {
+              toggleSlot(level, i);
+              found = true;
+              break;
+          }
+      }
+      
+      if (!found) {
+          alert(`¡No te quedan espacios de conjuro de nivel ${level}!`);
+      }
+  };
+
   const togglePreparedSpell = (spellName: string) => {
       const current = character.preparedSpells || [];
       const isPrepared = current.includes(spellName);
@@ -453,10 +472,6 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
         </div>
         <div className="relative h-3 w-full rounded-full bg-slate-100 dark:bg-black/40 overflow-hidden">
           <div className={`absolute top-0 left-0 h-full rounded-full transition-all duration-500 ${character.hp.current < character.hp.max / 4 ? 'bg-red-500' : 'bg-primary'}`} style={{ width: `${Math.min(100, (character.hp.current / character.hp.max) * 100)}%` }}></div>
-        </div>
-        <div className="flex justify-between items-center text-xs mt-1">
-          <span className="text-blue-400 font-medium flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">shield_moon</span> Temp HP: {character.hp.temp}</span>
-          <span className="text-slate-400 dark:text-slate-500">Hit Dice: {character.level}d{character.class ? HIT_DIE[character.class] || 8 : 8}</span>
         </div>
       </div>
 
@@ -793,12 +808,14 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
        </div>
 
        <div className="flex overflow-x-auto gap-2 no-scrollbar py-1">
-           <button 
-               onClick={() => setActiveSpellLevel(0)}
-               className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all ${activeSpellLevel === 0 ? 'bg-primary text-background-dark' : 'bg-surface-dark text-slate-500 hover:text-white border border-white/5'}`}
-           >
-               Cantrips
-           </button>
+           {maxCantrips > 0 && (
+               <button 
+                   onClick={() => setActiveSpellLevel(0)}
+                   className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all ${activeSpellLevel === 0 ? 'bg-primary text-background-dark' : 'bg-surface-dark text-slate-500 hover:text-white border border-white/5'}`}
+               >
+                   Cantrips
+               </button>
+           )}
            {Array.from({length: maxSpellLevel}, (_, i) => i + 1).map(lvl => {
                return (
                    <button 
@@ -870,7 +887,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                       </div>
                       <div className="p-4 text-sm text-slate-400 leading-relaxed max-h-48 overflow-y-auto custom-scrollbar">{spell.description}</div>
                       <div className="p-4 pt-0">
-                          <button className="w-full flex items-center justify-center gap-2 h-10 rounded-lg bg-primary hover:bg-primary-dark text-background-dark font-bold text-sm transition-colors shadow-lg shadow-primary/20"><span className="material-symbols-outlined text-[18px]">auto_fix</span>Cast Spell</button>
+                          <button onClick={() => castSpell(spell.level)} className="w-full flex items-center justify-center gap-2 h-10 rounded-lg bg-primary hover:bg-primary-dark text-background-dark font-bold text-sm transition-colors shadow-lg shadow-primary/20 active:scale-95"><span className="material-symbols-outlined text-[18px]">auto_fix</span>{spell.level === 0 ? 'Lanzar Truco' : 'Lanzar Hechizo'}</button>
                       </div>
                   </div>
                </div>
@@ -906,11 +923,27 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                </div>
 
                <div className="flex overflow-x-auto gap-2 p-2 border-b border-white/5 no-scrollbar bg-surface-dark">
-                   <button onClick={() => setGrimoireLevel(0)} className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors ${grimoireLevel === 0 ? 'bg-white text-background-dark' : 'bg-white/5 text-slate-400'}`}>Cantrips</button>
+                   {maxCantrips > 0 && (
+                       <button onClick={() => setGrimoireLevel(0)} className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors ${grimoireLevel === 0 ? 'bg-white text-background-dark' : 'bg-white/5 text-slate-400'}`}>Cantrips</button>
+                   )}
                    {Array.from({length: maxSpellLevel}, (_, i) => i + 1).map(lvl => (
                        <button key={lvl} onClick={() => setGrimoireLevel(lvl)} className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors ${grimoireLevel === lvl ? 'bg-white text-background-dark' : 'bg-white/5 text-slate-400'}`}>Lvl {lvl}</button>
                    ))}
                </div>
+
+               {grimoireLevel > 0 && (
+                   <div className="px-4 py-2 bg-slate-900/50 border-b border-white/5 flex items-center justify-between text-xs font-bold text-slate-400">
+                       <span>
+                           {effectiveCasterType === 'pact' 
+                               ? (grimoireLevel <= 5 
+                                   ? `Espacios de Pacto: ${getWarlockSlots(character.level).count} (Nivel ${getWarlockSlots(character.level).level})`
+                                   : 'Mystic Arcanum: 1 uso/día')
+                               : `Espacios de Nivel ${grimoireLevel}: ${getSlots(effectiveCasterType, character.level, grimoireLevel)}`
+                           }
+                       </span>
+                       <span className="material-symbols-outlined text-[14px]">bolt</span>
+                   </div>
+               )}
 
                <div className="flex-1 overflow-y-auto p-4 gap-2 flex flex-col">
                    {grimoireSpellList
