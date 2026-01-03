@@ -24,6 +24,18 @@ const CharacterList: React.FC<CharacterListProps> = ({ characters, onCreate, onS
 
       {/* Main Content */}
       <main className="flex-1 px-4 py-4 flex flex-col gap-4">
+        {characters.length === 0 && (
+            <div className="flex flex-col items-center justify-center flex-1 h-[60vh] opacity-50">
+                <div className="bg-slate-100 dark:bg-white/5 p-6 rounded-full mb-4">
+                    <span className="material-symbols-outlined text-5xl text-slate-300 dark:text-slate-600">person_add</span>
+                </div>
+                <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300">Sin Personajes</h3>
+                <p className="text-sm text-slate-400 text-center max-w-[200px] mt-1">
+                    Tu lista está vacía. Crea un nuevo héroe para comenzar tu aventura.
+                </p>
+            </div>
+        )}
+
         {characters.map((char) => (
           <article 
             key={char.id}

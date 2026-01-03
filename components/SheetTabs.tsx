@@ -1299,18 +1299,18 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
 
       {/* Tab Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-[#1E293B]/90 backdrop-blur-lg border-t border-slate-200 dark:border-white/5 pb-6 pt-2 px-6 z-40 max-w-md mx-auto">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-center items-center gap-6">
           {[
             { id: 'combat', icon: 'swords', label: 'Combat' },
-            { id: 'inventory', icon: 'backpack', label: 'Gear' },
-            { id: 'spells', icon: 'auto_stories', label: 'Spells', disabled: !isCaster },
             { id: 'features', icon: 'stars', label: 'Feats' },
+            { id: 'spells', icon: 'auto_stories', label: 'Spells', disabled: !isCaster },
+            { id: 'inventory', icon: 'backpack', label: 'Bag' },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => !tab.disabled && setActiveTab(tab.id as SheetTab)}
               disabled={tab.disabled}
-              className={`flex flex-col items-center gap-1 min-w-[60px] transition-all duration-300 ${activeTab === tab.id ? 'text-primary -translate-y-1' : tab.disabled ? 'text-slate-300 dark:text-slate-700 grayscale cursor-not-allowed' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300'}`}
+              className={`flex flex-col items-center gap-1 min-w-[60px] ${activeTab === tab.id ? 'text-primary' : tab.disabled ? 'text-slate-300 dark:text-slate-700 grayscale cursor-not-allowed' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300'}`}
             >
               <span className={`material-symbols-outlined text-[26px] ${activeTab === tab.id ? 'fill-current' : ''}`}>{tab.icon}</span>
               <span className="text-[9px] font-bold uppercase tracking-wider">{tab.label}</span>
