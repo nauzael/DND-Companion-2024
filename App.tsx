@@ -22,9 +22,21 @@ const App: React.FC = () => {
 
   const [activeCharacterId, setActiveCharacterId] = useState<string | null>(null);
 
-  // Persist characters to localStorage whenever they change
+  // Persist characters to localStorage with debounce and error handling
   useEffect(() => {
-    localStorage.setItem('dnd-characters', JSON.stringify(characters));
+    const saveData = setTimeout(() => {
+        try {
+            const dataToSave = JSON.stringify(characters);
+            localStorage.setItem('dnd-characters', dataToSave);
+        } catch (error) {
+            console.error("Failed to save characters to localStorage:", error);
+            if (error instanceof Error && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+                alert("⚠️ ¡Alerta de Memoria! El almacenamiento local está lleno. Es posible que tus últimos cambios no se guarden. Intenta borrar personajes antiguos o usar URLs de imagen más cortas.");
+            }
+        }
+    }, 1000); // Wait 1s after last change before saving to prevent UI freeze on rapid updates
+
+    return () => clearTimeout(saveData);
   }, [characters]);
 
   const activeCharacter = characters.find(c => c.id === activeCharacterId) || characters[0];
@@ -39,8 +51,10 @@ const App: React.FC = () => {
   };
 
   const handleDeleteCharacter = (id: string) => {
-    setCharacters(prev => prev.filter(c => c.id !== id));
-    if (activeCharacterId === id) setActiveCharacterId(null);
+    if (window.confirm("¿Estás seguro de que quieres borrar este personaje?")) {
+        setCharacters(prev => prev.filter(c => c.id !== id));
+        if (activeCharacterId === id) setActiveCharacterId(null);
+    }
   };
 
   const handleFinishCreation = (newChar: Character) => {

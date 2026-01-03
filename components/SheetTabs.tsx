@@ -574,7 +574,23 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
     if (character.level >= 5) martialArtsDie = '1d8';
     if (character.level >= 11) martialArtsDie = '1d10';
     if (character.level >= 17) martialArtsDie = '1d12';
-    const equippedWeapons = inventory.filter(i => i.equipped && WEAPONS_DB[i.name]);
+    
+    // Check for Wraps of Unarmed Power
+    let unarmedBonus = 0;
+    const equippedWraps = inventory.find(i => i.equipped && i.name.includes('Wraps of Unarmed Power'));
+    if (equippedWraps) {
+        if (equippedWraps.name.includes('+1')) unarmedBonus = 1;
+        else if (equippedWraps.name.includes('+2')) unarmedBonus = 2;
+        else if (equippedWraps.name.includes('+3')) unarmedBonus = 3;
+    }
+
+    // Fix: Check ALL_ITEMS for type 'Weapon' instead of strictly WEAPONS_DB to include Magic Weapons
+    const equippedWeapons = inventory.filter(i => {
+        if (!i.equipped) return false;
+        const itemData = ALL_ITEMS[i.name];
+        return itemData && itemData.type === 'Weapon';
+    });
+    
     const isDualWielding = equippedWeapons.length > 1;
 
     return (
@@ -642,8 +658,11 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">Equipped Weapons</h3>
       </div>
       <div className="flex flex-col gap-3 mb-6">
-         {inventory.filter(i => i.equipped && WEAPONS_DB[i.name]).map(item => {
-             const weapon = WEAPONS_DB[item.name];
+         {equippedWeapons.map(item => {
+             // Cast item to WeaponData safely as we filtered by type='Weapon'
+             const weapon = ALL_ITEMS[item.name] as WeaponData;
+             if (!weapon) return null;
+
              const isFinesse = weapon.properties.includes('Finesse');
              const isRanged = weapon.rangeType === 'Ranged';
              const isThrown = weapon.properties.some(p => p.includes('Thrown'));
@@ -674,6 +693,13 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
              if (item.name.includes('+3')) { toHit += 3; dmgMod += 3; }
              if (item.name === 'Sun Blade') { toHit += 2; dmgMod += 2; }
              if (item.name === 'Holy Avenger') { toHit += 3; dmgMod += 3; }
+
+             // Wraps of Unarmed Power Bonus
+             if (weapon.name === 'Unarmed Strike' && unarmedBonus > 0) {
+                 toHit += unarmedBonus;
+                 dmgMod += unarmedBonus;
+                 activeBonuses.push(`Wraps +${unarmedBonus}`);
+             }
 
              return (
              <div key={item.id} className="rounded-2xl bg-white dark:bg-surface-dark p-4 shadow-sm ring-1 ring-slate-200 dark:ring-white/5 hover:ring-primary/50 dark:hover:ring-primary/50 transition-all">
@@ -1251,49 +1277,72 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
   };
 
   return (
-    <div className="flex flex-col h-full min-h-screen relative bg-background-light dark:bg-background-dark">
-      <nav className="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-black/5 dark:border-white/5 px-4 h-16 flex items-center justify-between">
-        <button onClick={onBack} className="flex items-center justify-center w-10 h-10 rounded-full active:bg-black/5 dark:active:bg-white/10 transition-colors"><span className="material-symbols-outlined text-2xl">arrow_back</span></button>
-        <div className="flex flex-col items-center">
-             <h1 className="text-lg font-bold tracking-tight leading-none">{character.name}</h1>
-             <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{character.species} {character.class} {character.level}</span>
+    <div className="flex flex-col h-full min-h-screen bg-background-light dark:bg-background-dark relative">
+      {/* Header */}
+      <div className="sticky top-0 z-30 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-black/5 dark:border-white/5 px-4 py-3 flex items-center justify-between">
+        <button onClick={onBack} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+          <span className="material-symbols-outlined">arrow_back</span>
+        </button>
+        <div className="text-center">
+          <h2 className="font-bold text-lg leading-tight text-slate-900 dark:text-white">{character.name}</h2>
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Lvl {character.level} {character.class}</p>
         </div>
-        <button className="text-primary font-semibold text-sm px-2 py-1 rounded-lg hover:bg-primary/10 transition-colors">Edit</button>
-      </nav>
+        <div className="w-10"></div> {/* Spacer */}
+      </div>
 
-      <main className="flex-1 overflow-y-auto no-scrollbar relative">
-         {activeTab === 'combat' && renderCombat()}
-         {activeTab === 'inventory' && renderInventory()}
-         {activeTab === 'spells' && isCaster && renderSpells()}
-         {activeTab === 'features' && renderFeatures()}
+      <main className="flex-1 overflow-y-auto no-scrollbar relative pb-24">
+        {activeTab === 'combat' && renderCombat()}
+        {activeTab === 'inventory' && renderInventory()}
+        {activeTab === 'spells' && renderSpells()}
+        {activeTab === 'features' && renderFeatures()}
       </main>
 
+      {/* Tab Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-[#1E293B]/90 backdrop-blur-lg border-t border-slate-200 dark:border-white/5 pb-6 pt-2 px-6 z-40 max-w-md mx-auto">
+        <div className="flex justify-between items-center">
+          {[
+            { id: 'combat', icon: 'swords', label: 'Combat' },
+            { id: 'inventory', icon: 'backpack', label: 'Gear' },
+            { id: 'spells', icon: 'auto_stories', label: 'Spells', disabled: !isCaster },
+            { id: 'features', icon: 'stars', label: 'Feats' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => !tab.disabled && setActiveTab(tab.id as SheetTab)}
+              disabled={tab.disabled}
+              className={`flex flex-col items-center gap-1 min-w-[60px] transition-all duration-300 ${activeTab === tab.id ? 'text-primary -translate-y-1' : tab.disabled ? 'text-slate-300 dark:text-slate-700 grayscale cursor-not-allowed' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300'}`}
+            >
+              <span className={`material-symbols-outlined text-[26px] ${activeTab === tab.id ? 'fill-current' : ''}`}>{tab.icon}</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider">{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* HP Edit Modal */}
       {hpModal.show && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-              <div className="w-full max-w-sm bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-2xl transform transition-all scale-100">
-                  <h3 className={`text-xl font-bold text-center mb-4 ${hpModal.type === 'damage' ? 'text-red-500' : 'text-green-500'}`}>{hpModal.type === 'damage' ? 'Recibir Daño' : 'Restaurar Salud'}</h3>
-                  <div className="flex justify-center mb-6"><div className="relative w-32"><input autoFocus type="number" pattern="[0-9]*" inputMode="numeric" value={hpAmount} onChange={(e) => setHpAmount(e.target.value)} className="w-full text-center text-4xl font-bold bg-slate-100 dark:bg-black/30 border-2 border-transparent focus:border-primary/50 rounded-2xl py-3 outline-none" placeholder="0"/></div></div>
-                  <div className="flex gap-3"><button onClick={() => setHpModal({ ...hpModal, show: false })} className="flex-1 py-3 rounded-xl font-bold bg-slate-100 dark:bg-white/5 text-slate-500 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">Cancelar</button><button onClick={applyHpChange} className={`flex-1 py-3 rounded-xl font-bold text-white shadow-lg transition-transform active:scale-95 ${hpModal.type === 'damage' ? 'bg-red-500 shadow-red-500/30' : 'bg-green-500 shadow-green-500/30'}`}>Aplicar</button></div>
-              </div>
-          </div>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setHpModal({ ...hpModal, show: false })}>
+            <div className="w-full max-w-[280px] bg-white dark:bg-surface-dark p-5 rounded-3xl shadow-2xl scale-100 transition-transform" onClick={e => e.stopPropagation()}>
+                <h3 className="text-center font-bold text-lg mb-4 text-slate-900 dark:text-white">
+                    {hpModal.type === 'heal' ? 'Curar' : 'Daño'}
+                </h3>
+                <input 
+                    type="number" 
+                    value={hpAmount}
+                    onChange={(e) => setHpAmount(e.target.value)}
+                    autoFocus
+                    className="w-full text-center text-4xl font-bold bg-transparent border-b-2 border-slate-200 dark:border-white/10 py-2 mb-6 outline-none focus:border-primary text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                    placeholder="0"
+                />
+                <div className="grid grid-cols-2 gap-3">
+                    <button onClick={() => setHpModal({ ...hpModal, show: false })} className="py-3 rounded-xl font-bold text-sm text-slate-500 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">Cancelar</button>
+                    <button onClick={applyHpChange} className={`py-3 rounded-xl font-bold text-sm text-white shadow-lg transition-transform active:scale-95 ${hpModal.type === 'heal' ? 'bg-green-500 shadow-green-500/30' : 'bg-red-500 shadow-red-500/30'}`}>
+                        Confirmar
+                    </button>
+                </div>
+            </div>
+        </div>
       )}
-
-      {selectedSkill && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setSelectedSkill(null)}>
-              <div className="w-full max-w-sm bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-2xl transform transition-all scale-100" onClick={e => e.stopPropagation()}>
-                  <div className="flex justify-between items-start mb-4"><div><h3 className="text-xl font-bold text-slate-900 dark:text-white">{selectedSkill}</h3><span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{SKILL_ABILITY_MAP[selectedSkill]} ({character.skills.includes(selectedSkill) ? 'Entrenada' : 'No Entrenada'})</span></div><button onClick={() => setSelectedSkill(null)} className="text-slate-400 hover:text-slate-600"><span className="material-symbols-outlined">close</span></button></div>
-                  <div className="mb-6"><p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{SKILL_DESCRIPTIONS[selectedSkill] || "Sin descripción disponible."}</p></div>
-                  <button onClick={() => setSelectedSkill(null)} className="w-full py-3 rounded-xl font-bold text-sm bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">Cerrar</button>
-              </div>
-          </div>
-      )}
-
-      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-background-dark border-t border-slate-200 dark:border-white/5 px-6 py-3 flex justify-around items-center max-w-md mx-auto">
-         <button onClick={() => setActiveTab('combat')} className={`flex flex-col items-center gap-1 w-16 transition-colors ${activeTab === 'combat' ? 'text-primary' : 'text-slate-400 hover:text-primary'}`}><span className={`material-symbols-outlined text-[24px] ${activeTab==='combat' ? 'fill-current' : ''}`}>swords</span><span className="text-[10px] font-bold">Combat</span></button>
-         <button onClick={() => setActiveTab('inventory')} className={`flex flex-col items-center gap-1 w-16 transition-colors ${activeTab === 'inventory' ? 'text-primary' : 'text-slate-400 hover:text-primary'}`}><span className={`material-symbols-outlined text-[24px] ${activeTab==='inventory' ? 'fill-current' : ''}`}>backpack</span><span className="text-[10px] font-bold">Inventario</span></button>
-         {isCaster && (<button onClick={() => setActiveTab('spells')} className={`flex flex-col items-center gap-1 w-16 transition-colors ${activeTab === 'spells' ? 'text-primary' : 'text-slate-400 hover:text-primary'}`}><span className={`material-symbols-outlined text-[24px] ${activeTab==='spells' ? 'fill-current' : ''}`}>auto_stories</span><span className="text-[10px] font-bold">Spells</span></button>)}
-         <button onClick={() => setActiveTab('features')} className={`flex flex-col items-center gap-1 w-16 transition-colors ${activeTab === 'features' ? 'text-primary' : 'text-slate-400 hover:text-primary'}`}><span className={`material-symbols-outlined text-[24px] ${activeTab==='features' ? 'fill-current' : ''}`}>stars</span><span className="text-[10px] font-bold">Rasgos</span></button>
-      </nav>
     </div>
   );
 };

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Character, CreatorStep, Ability, Trait, SubclassData } from '../types';
 import { MAP_TEXTURE, CLASS_UI_MAP, SPECIES_UI_MAP, BACKGROUND_UI_MAP } from '../constants';
@@ -162,6 +163,12 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
   // ASI Decisions State (Level -> Decision)
   const [asiDecisions, setAsiDecisions] = useState<Record<number, AsiDecision>>({});
+
+  // Generate a random trinket once per session/reset to avoid memory churn on re-renders
+  const [trinket] = useState<string>(() => {
+      const randomIndex = Math.floor(Math.random() * TRINKETS.length);
+      return `Trinket: ${TRINKETS[randomIndex]}`;
+  });
 
   // Derived Data
   const speciesData = SPECIES_DETAILS[selectedSpecies];
@@ -479,46 +486,43 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
       return passives;
   };
 
-  const generateTrinket = () => {
-    const randomIndex = Math.floor(Math.random() * TRINKETS.length);
-    return `Trinket: ${TRINKETS[randomIndex]}`;
-  }
-
-  const newCharacter: Character = {
-    id: `c-${Date.now()}`,
-    name: name || 'Heroe',
-    level: level,
-    class: selectedClass,
-    subclass: selectedSubclass,
-    species: selectedSpecies,
-    background: selectedBackground,
-    alignment: selectedAlignment,
-    hp: { current: calculateMaxHP(), max: calculateMaxHP(), temp: 0 },
-    ac: calculateAC(),
-    init: Math.floor((finalStats.DEX - 10) / 2),
-    speed: calculateSpeed(),
-    profBonus: Math.ceil(1 + (level / 4)), // Approximate PB calculation
-    stats: finalStats,
-    skills: [...(backgroundData?.skills || []), ...selectedSkills],
-    languages: ['Common', selectedLanguage1, selectedLanguage2].filter(Boolean),
-    feats: [
-        backgroundData?.feat, 
-        speciesData?.name === 'Human' ? selectedFeat : undefined,
-        ...asiLevels.map(l => asiDecisions[l]?.type === 'feat' ? asiDecisions[l]?.feat : undefined)
-    ].filter((f): f is string => !!f),
-    inventory: [generateTrinket(), ...(backgroundData?.equipment || [])].map((item, i) => ({
-      id: `init-item-${i}`,
-      name: item,
-      quantity: 1,
-      equipped: false
-    })),
-    imageUrl: charImage
-  };
-
   const nextStep = () => {
     if (!canProceed()) return;
     if (step < 5) setStep((s) => (s + 1) as CreatorStep);
-    else onFinish(newCharacter);
+    else {
+        // Construct the new character object only when finishing
+        const newCharacter: Character = {
+            id: `c-${Date.now()}`,
+            name: name || 'Heroe',
+            level: level,
+            class: selectedClass,
+            subclass: selectedSubclass,
+            species: selectedSpecies,
+            background: selectedBackground,
+            alignment: selectedAlignment,
+            hp: { current: calculateMaxHP(), max: calculateMaxHP(), temp: 0 },
+            ac: calculateAC(),
+            init: Math.floor((finalStats.DEX - 10) / 2),
+            speed: calculateSpeed(),
+            profBonus: Math.ceil(1 + (level / 4)),
+            stats: finalStats,
+            skills: [...(backgroundData?.skills || []), ...selectedSkills],
+            languages: ['Common', selectedLanguage1, selectedLanguage2].filter(Boolean),
+            feats: [
+                backgroundData?.feat, 
+                speciesData?.name === 'Human' ? selectedFeat : undefined,
+                ...asiLevels.map(l => asiDecisions[l]?.type === 'feat' ? asiDecisions[l]?.feat : undefined)
+            ].filter((f): f is string => !!f),
+            inventory: [trinket, ...(backgroundData?.equipment || [])].map((item, i) => ({
+              id: `init-item-${i}`,
+              name: item,
+              quantity: 1,
+              equipped: false
+            })),
+            imageUrl: charImage
+        };
+        onFinish(newCharacter);
+    }
   };
   
   const prevStep = () => {
@@ -569,7 +573,13 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                         className="relative shrink-0 group cursor-pointer" 
                         onClick={() => {
                             const url = window.prompt("Pegar URL de la imagen (Hotlink):", charImage === DEFAULT_CHAR_IMAGE ? "" : charImage);
-                            if (url !== null) setCharImage(url || DEFAULT_CHAR_IMAGE);
+                            if (url !== null) {
+                                if (url.length > 5000) {
+                                    alert("⛔ ¡URL demasiado larga! Parece que estás intentando pegar una imagen codificada en Base64. Por favor, usa un enlace directo a una imagen (que termine en .jpg o .png) para evitar que la aplicación falle.");
+                                } else {
+                                    setCharImage(url || DEFAULT_CHAR_IMAGE);
+                                }
+                            }
                         }}
                     >
                         <div 
@@ -1299,30 +1309,30 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
             <div className="px-6 py-4 space-y-6">
                  {/* Header Identity */}
                  <div className="flex flex-col items-center">
-                    <div className="w-24 h-24 rounded-3xl bg-slate-200 dark:bg-surface-light mb-3 shadow-lg border-2 border-white dark:border-white/10" style={{backgroundImage: `url(${newCharacter.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
-                    <h2 className="text-3xl font-bold text-center text-slate-900 dark:text-white leading-tight">{newCharacter.name}</h2>
+                    <div className="w-24 h-24 rounded-3xl bg-slate-200 dark:bg-surface-light mb-3 shadow-lg border-2 border-white dark:border-white/10" style={{backgroundImage: `url(${charImage})`, backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
+                    <h2 className="text-3xl font-bold text-center text-slate-900 dark:text-white leading-tight">{name || 'Heroe'}</h2>
                     <div className="flex flex-wrap justify-center items-center gap-2 mt-1">
-                        <span className="text-sm font-bold text-primary uppercase tracking-wide">{newCharacter.species}</span>
+                        <span className="text-sm font-bold text-primary uppercase tracking-wide">{selectedSpecies}</span>
                         <span className="w-1 h-1 rounded-full bg-slate-400"></span>
-                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">{newCharacter.class}</span>
-                        {newCharacter.subclass && (
+                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">{selectedClass}</span>
+                        {selectedSubclass && (
                             <>
                                 <span className="w-1 h-1 rounded-full bg-slate-400"></span>
-                                <span className="text-sm font-bold text-slate-500 dark:text-slate-400 truncate max-w-[150px]">{newCharacter.subclass}</span>
+                                <span className="text-sm font-bold text-slate-500 dark:text-slate-400 truncate max-w-[150px]">{selectedSubclass}</span>
                             </>
                         )}
                         <span className="w-1 h-1 rounded-full bg-slate-400"></span>
-                        <span className="text-sm font-bold text-slate-500">Lvl {newCharacter.level}</span>
+                        <span className="text-sm font-bold text-slate-500">Lvl {level}</span>
                     </div>
                  </div>
 
                  {/* Combat Stats */}
                  <div className="grid grid-cols-4 gap-3">
                     {[
-                      { l: 'HP', v: newCharacter.hp.max, i: 'favorite', c: 'text-red-500' },
-                      { l: 'AC', v: newCharacter.ac, i: 'shield', c: 'text-blue-500' },
-                      { l: 'SPD', v: newCharacter.speed, i: 'directions_run', c: 'text-green-500' },
-                      { l: 'INI', v: `${newCharacter.init >= 0 ? '+' : ''}${newCharacter.init}`, i: 'bolt', c: 'text-yellow-500' }
+                      { l: 'HP', v: calculateMaxHP(), i: 'favorite', c: 'text-red-500' },
+                      { l: 'AC', v: calculateAC(), i: 'shield', c: 'text-blue-500' },
+                      { l: 'SPD', v: calculateSpeed(), i: 'directions_run', c: 'text-green-500' },
+                      { l: 'INI', v: `${Math.floor((finalStats.DEX - 10) / 2) >= 0 ? '+' : ''}${Math.floor((finalStats.DEX - 10) / 2)}`, i: 'bolt', c: 'text-yellow-500' }
                     ].map(s => (
                         <div key={s.l} className="flex flex-col items-center p-2.5 rounded-2xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 shadow-sm">
                             <span className={`material-symbols-outlined ${s.c} text-lg mb-1`}>{s.i}</span>
@@ -1336,7 +1346,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                  <div>
                     <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5 pl-1">Atributos</h4>
                     <div className="grid grid-cols-3 gap-2">
-                        {Object.entries(newCharacter.stats).map(([key, val]) => (
+                        {Object.entries(finalStats).map(([key, val]) => (
                             <div key={key} className="flex justify-between items-center p-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-transparent dark:border-white/5">
                                 <span className="text-xs font-bold text-slate-500">{key}</span>
                                 <span className="text-sm font-bold text-slate-900 dark:text-white">{val}</span>
@@ -1350,23 +1360,41 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                     <div className="flex justify-between items-start border-b border-slate-100 dark:border-white/5 pb-3">
                         <div className="flex flex-col">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Trasfondo</span>
-                            <span className="font-bold text-sm text-slate-900 dark:text-white">{newCharacter.background}</span>
+                            <span className="font-bold text-sm text-slate-900 dark:text-white">{selectedBackground}</span>
                         </div>
                         <div className="flex flex-col items-end">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Alineamiento</span>
-                            <span className="font-bold text-sm text-slate-900 dark:text-white">{newCharacter.alignment}</span>
+                            <span className="font-bold text-sm text-slate-900 dark:text-white">{selectedAlignment}</span>
                         </div>
                     </div>
                     
                     <div className="space-y-2">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hazañas & Rasgos</span>
                         <div className="flex flex-col gap-2">
-                            {newCharacter.feats.map(f => (
-                                <div key={f} className="flex items-center gap-2">
+                            {backgroundData?.feat && (
+                                <div className="flex items-center gap-2">
                                     <span className="material-symbols-outlined text-primary text-sm">military_tech</span>
-                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{f}</span>
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{backgroundData.feat}</span>
                                 </div>
-                            ))}
+                            )}
+                            {selectedSpecies === 'Human' && selectedFeat && (
+                                <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-primary text-sm">military_tech</span>
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{selectedFeat}</span>
+                                </div>
+                            )}
+                            {asiLevels.map(l => {
+                                const decision = asiDecisions[l];
+                                if (decision?.type === 'feat' && decision.feat) {
+                                    return (
+                                        <div key={l} className="flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-primary text-sm">military_tech</span>
+                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{decision.feat}</span>
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            })}
                             {activePassives.map(p => (
                                 <div key={p} className="flex items-center gap-2">
                                     <span className="material-symbols-outlined text-purple-500 text-sm">auto_awesome</span>
@@ -1379,7 +1407,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                     <div className="pt-1">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Idiomas</span>
                         <div className="flex flex-wrap gap-1.5">
-                            {newCharacter.languages.map(l => (
+                            {['Common', selectedLanguage1, selectedLanguage2].filter(Boolean).map(l => (
                                 <span key={l} className="px-2 py-1 rounded-md bg-slate-100 dark:bg-white/5 text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/5">
                                     {l}
                                 </span>
@@ -1392,7 +1420,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                  <div>
                     <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5 pl-1">Habilidades Entrenadas</h4>
                     <div className="flex flex-wrap gap-2">
-                        {newCharacter.skills.map(skill => (
+                        {[...(backgroundData?.skills || []), ...selectedSkills].map(skill => (
                             <div key={skill} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary">
                                 <span className="material-symbols-outlined text-[14px]">check</span>
                                 <span className="text-xs font-bold">{skill}</span>
