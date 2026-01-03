@@ -369,6 +369,27 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
       // Check Inventory for Stat Modifying Items
       const equippedNames = inventory.filter(i => i.equipped).map(i => i.name);
       
+      // -- Additive Bonuses (Apply before Setters) --
+      if (equippedNames.includes('Belt of Dwarvenkind')) stats.CON = Math.min(20, (stats.CON || 10) + 2);
+      if (equippedNames.includes('Book of Exalted Deeds')) stats.WIS = Math.min(24, (stats.WIS || 10) + 2);
+
+      // Manuals/Tomes (Assuming equipped implies used for this context, or active effect)
+      if (equippedNames.includes('Manual of Bodily Health')) stats.CON = Math.min(30, (stats.CON || 10) + 2);
+      if (equippedNames.includes('Manual of Gainful Exercise')) stats.STR = Math.min(30, (stats.STR || 10) + 2);
+      if (equippedNames.includes('Manual of Quickness of Action')) stats.DEX = Math.min(30, (stats.DEX || 10) + 2);
+      if (equippedNames.includes('Tome of Clear Thought')) stats.INT = Math.min(30, (stats.INT || 10) + 2);
+      if (equippedNames.includes('Tome of Leadership and Influence')) stats.CHA = Math.min(30, (stats.CHA || 10) + 2);
+      if (equippedNames.includes('Tome of Understanding')) stats.WIS = Math.min(30, (stats.WIS || 10) + 2);
+
+      // Ioun Stones
+      if (equippedNames.includes('Ioun Stone (Agility)')) stats.DEX = Math.min(20, (stats.DEX || 10) + 2);
+      if (equippedNames.includes('Ioun Stone (Fortitude)')) stats.CON = Math.min(20, (stats.CON || 10) + 2);
+      if (equippedNames.includes('Ioun Stone (Insight)')) stats.WIS = Math.min(20, (stats.WIS || 10) + 2);
+      if (equippedNames.includes('Ioun Stone (Intellect)')) stats.INT = Math.min(20, (stats.INT || 10) + 2);
+      if (equippedNames.includes('Ioun Stone (Leadership)')) stats.CHA = Math.min(20, (stats.CHA || 10) + 2);
+      if (equippedNames.includes('Ioun Stone (Strength)')) stats.STR = Math.min(20, (stats.STR || 10) + 2);
+      
+      // -- Set Scores (Overrides) --
       if (equippedNames.includes('Gauntlets of Ogre Power')) stats.STR = Math.max(stats.STR, 19);
       if (equippedNames.includes('Headband of Intellect')) stats.INT = Math.max(stats.INT, 19);
       if (equippedNames.includes('Amulet of Health')) stats.CON = Math.max(stats.CON, 19);
@@ -381,8 +402,17 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
       if (equippedNames.includes('Belt of Giant Strength (Cloud)')) stats.STR = Math.max(stats.STR, 27);
       if (equippedNames.includes('Belt of Giant Strength (Storm)')) stats.STR = Math.max(stats.STR, 29);
 
-      // Potions (if "equipped")
+      // Potions (if "equipped" to represent active)
       if (equippedNames.includes('Potion of Giant Strength (Hill)')) stats.STR = Math.max(stats.STR, 21);
+      if (equippedNames.includes('Potion of Giant Strength (Frost)')) stats.STR = Math.max(stats.STR, 23);
+      if (equippedNames.includes('Potion of Giant Strength (Stone)')) stats.STR = Math.max(stats.STR, 23);
+      if (equippedNames.includes('Potion of Giant Strength (Fire)')) stats.STR = Math.max(stats.STR, 25);
+      if (equippedNames.includes('Potion of Giant Strength (Cloud)')) stats.STR = Math.max(stats.STR, 27);
+      if (equippedNames.includes('Potion of Giant Strength (Storm)')) stats.STR = Math.max(stats.STR, 29);
+
+      // Specific Items
+      if (equippedNames.includes('Thunderous Greatclub')) stats.STR = Math.max(stats.STR, 20);
+      if (equippedNames.some(n => n.includes('Hand of Vecna'))) stats.STR = Math.max(stats.STR, 20);
 
       return stats;
   }, [character.stats, character.class, character.level, inventory]);
@@ -421,7 +451,10 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
           // Magic Item AC Bonuses
           if (item.name === 'Ring of Protection') magicBonus += 1;
           if (item.name === 'Cloak of Protection') magicBonus += 1;
+          if (item.name === 'Ioun Stone (Protection)') magicBonus += 1;
           if (item.name.includes('Armor +1')) magicBonus += 1; 
+          if (item.name.includes('Armor +2')) magicBonus += 2; 
+          if (item.name.includes('Armor +3')) magicBonus += 3; 
           if (item.name === 'Animated Shield' && item.equipped) shieldBonus += 2; 
       });
 
