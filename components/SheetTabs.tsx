@@ -38,6 +38,17 @@ const FULL_CASTER_SLOTS: number[][] = [
     [4, 3, 3, 3, 3, 2, 2, 1, 1], // 20
 ];
 
+const SCHOOL_THEMES: Record<string, { text: string, bg: string, border: string, icon: string }> = {
+    'Abjuration': { text: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: 'shield' },
+    'Conjuration': { text: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20', icon: 'apps' },
+    'Divination': { text: 'text-indigo-300', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20', icon: 'visibility' },
+    'Enchantment': { text: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20', icon: 'favorite' },
+    'Evocation': { text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', icon: 'local_fire_department' },
+    'Illusion': { text: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20', icon: 'auto_fix' },
+    'Necromancy': { text: 'text-lime-400', bg: 'bg-lime-500/10', border: 'border-lime-500/20', icon: 'skull' },
+    'Transmutation': { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: 'change_circle' },
+};
+
 const getWarlockSlots = (level: number): { count: number, level: number } => {
     let count = 1;
     if (level >= 2) count = 2;
@@ -91,6 +102,38 @@ const getProgressiveValue = (table: Record<number, number> | undefined, level: n
     return value;
 };
 
+// Helper to extract damage/healing from description
+const getSpellSummary = (description: string, school: string) => {
+    const damageRegex = /(\d+d\d+)(\s+\+\s+\d+)?\s+(\w+)\s+damage/i;
+    const healRegex = /regains?\s+(\d+d\d+)(\s+\+\s+\d+)?\s+hit\s+points/i;
+    const healRegex2 = /restore\s+(\d+d\d+)(\s+\+\s+\d+)?\s+hit\s+points/i;
+
+    const dmgMatch = description.match(damageRegex);
+    if (dmgMatch) {
+        return { text: `${dmgMatch[1]} ${dmgMatch[3]}`, color: 'text-red-400', icon: 'swords' };
+    }
+
+    const healMatch = description.match(healRegex) || description.match(healRegex2);
+    if (healMatch) {
+        return { text: `${healMatch[1]} Heal`, color: 'text-green-400', icon: 'healing' };
+    }
+
+    const theme = SCHOOL_THEMES[school] || { text: 'text-slate-400', icon: 'auto_stories' };
+    return { text: school, color: theme.text, icon: theme.icon };
+};
+
+const formatShort = (text: string) => {
+    return text
+        .replace('Bonus Action', 'Bonus')
+        .replace('Action', '1 Act')
+        .replace('Reaction', 'Reac')
+        .replace('minutes', 'min')
+        .replace('hours', 'h')
+        .replace('feet', 'ft')
+        .replace('Self', 'Self')
+        .replace('Touch', 'Touch');
+};
+
 const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) => {
   const [activeTab, setActiveTab] = useState<SheetTab>('combat');
   const [inventory, setInventory] = useState<InventoryItem[]>(character.inventory || []);
@@ -105,6 +148,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
   const [grimoireSearch, setGrimoireSearch] = useState('');
   const [grimoireLevel, setGrimoireLevel] = useState(0);
   const [expandedGrimoireId, setExpandedGrimoireId] = useState<string | null>(null);
+  const [selectedSpellName, setSelectedSpellName] = useState<string | null>(null);
   
   const [usedSlots, setUsedSlots] = useState<Record<string, boolean>>({});
   const [isRaging, setIsRaging] = useState(false);
@@ -377,9 +421,8 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
           // Magic Item AC Bonuses
           if (item.name === 'Ring of Protection') magicBonus += 1;
           if (item.name === 'Cloak of Protection') magicBonus += 1;
-          if (item.name.includes('Armor +1')) magicBonus += 1; // Generic +1 catch (if not built into baseAC)
-          // Specific Named Items
-          if (item.name === 'Animated Shield' && item.equipped) shieldBonus += 2; // Assuming animated shield adds to shield bonus
+          if (item.name.includes('Armor +1')) magicBonus += 1; 
+          if (item.name === 'Animated Shield' && item.equipped) shieldBonus += 2; 
       });
 
       if (!hasArmor) {
@@ -748,7 +791,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                    <div className="flex-1 relative"><input autoFocus type="text" placeholder="Search items..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-slate-100 dark:bg-black/20 border-none rounded-xl py-2.5 pl-10 pr-4 outline-none focus:ring-2 ring-primary/50"/><span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400">search</span></div>
                </div>
                <div className="flex-1 overflow-y-auto no-scrollbar space-y-2">
-                   {Object.keys(ALL_ITEMS).filter(name => name.toLowerCase().includes(searchQuery.toLowerCase())).map(name => {
+                   {Object.keys(ALL_ITEMS).filter(name => name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 50).map(name => {
                            const item = ALL_ITEMS[name];
                            return (<button key={name} onClick={() => addItem(name)} className="w-full text-left p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 flex justify-between items-center border border-transparent hover:border-slate-200 dark:hover:border-white/10 transition-all"><div><p className="font-bold text-slate-900 dark:text-white">{name}</p><p className="text-xs text-slate-500">{item.type} • {item.cost}</p></div><span className="material-symbols-outlined text-slate-300">add</span></button>);
                        })}
@@ -956,39 +999,39 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
            ) : spellsToShow.map(spellName => {
                const spell = SPELL_DETAILS[spellName];
                if (!spell) return null;
-               const isExpanded = expandedIds[spellName];
+               
+               const theme = SCHOOL_THEMES[spell.school] || { text: 'text-slate-400', bg: 'bg-slate-100 dark:bg-white/5', border: 'border-white/5', icon: 'auto_stories' };
+               const summary = getSpellSummary(spell.description, spell.school);
 
                return (
-               <div key={spellName} className="relative overflow-hidden rounded-xl bg-surface-dark border border-white/5 shadow-sm transition-all duration-300">
-                  <div 
-                    onClick={() => toggleExpand(spellName)}
-                    className="p-4 flex items-start justify-between gap-4 cursor-pointer hover:bg-white/5 transition-colors"
-                  >
-                      <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                              <h3 className="text-white text-lg font-bold leading-tight">{spell.name}</h3>
-                              <span className="material-symbols-outlined text-primary text-[16px]" title="Prepared">check_circle</span>
+               <div 
+                  key={spellName} 
+                  onClick={() => setSelectedSpellName(spellName)}
+                  className={`p-4 rounded-xl bg-surface-dark border ${theme.border} shadow-sm hover:border-opacity-100 transition-all cursor-pointer flex items-center justify-between group active:scale-[0.99]`}
+               >
+                  <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${theme.bg} ${theme.text} shrink-0`}>
+                          <span className="font-bold text-sm">{spell.level === 0 ? 'C' : spell.level}</span>
+                      </div>
+                      <div className="min-w-0">
+                          <h3 className="text-white font-bold leading-tight group-hover:text-primary transition-colors truncate">{spell.name}</h3>
+                          <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+                              <span className={`flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold ${summary.color}`}>
+                                  <span className="material-symbols-outlined text-[10px]">{summary.icon}</span>
+                                  {summary.text}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
+                                  <span className="w-0.5 h-0.5 rounded-full bg-slate-600"></span>
+                                  {formatShort(spell.castingTime)}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
+                                  <span className="w-0.5 h-0.5 rounded-full bg-slate-600"></span>
+                                  {formatShort(spell.range)}
+                              </span>
                           </div>
-                          <p className="text-primary text-[10px] font-bold uppercase tracking-wider">
-                              {spell.level === 0 ? 'Cantrip' : `${spell.level}st Level`} {spell.school}
-                          </p>
-                      </div>
-                      <button className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:text-white transition-colors">
-                          <span className="material-symbols-outlined text-[20px]">more_horiz</span>
-                      </button>
-                  </div>
-
-                  <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                      <div className="grid grid-cols-3 border-y border-white/5 bg-black/20 text-[10px] text-slate-400 font-medium">
-                          <div className="p-3 flex flex-col items-center justify-center gap-1 border-r border-white/5"><span className="material-symbols-outlined text-[16px]">timer</span><span className="text-center leading-tight">{spell.castingTime}</span></div>
-                          <div className="p-3 flex flex-col items-center justify-center gap-1 border-r border-white/5"><span className="material-symbols-outlined text-[16px]">straighten</span><span className="text-center leading-tight">{spell.range}</span></div>
-                          <div className="p-3 flex flex-col items-center justify-center gap-1"><span className="material-symbols-outlined text-[16px]">science</span><span className="text-center leading-tight">{spell.components}</span></div>
-                      </div>
-                      <div className="p-4 text-sm text-slate-400 leading-relaxed max-h-48 overflow-y-auto custom-scrollbar">{spell.description}</div>
-                      <div className="p-4 pt-0">
-                          <button onClick={() => castSpell(spell.level)} className="w-full flex items-center justify-center gap-2 h-10 rounded-lg bg-primary hover:bg-primary-dark text-background-dark font-bold text-sm transition-colors shadow-lg shadow-primary/20 active:scale-95"><span className="material-symbols-outlined text-[18px]">auto_fix</span>{spell.level === 0 ? 'Lanzar Truco' : 'Lanzar Hechizo'}</button>
                       </div>
                   </div>
+                  <span className={`material-symbols-outlined ${theme.text} opacity-50 group-hover:opacity-100 shrink-0`}>chevron_right</span>
                </div>
            )})}
        </div>
@@ -1054,12 +1097,15 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                            return true;
                        })
                        .sort()
+                       .slice(0, 50) // Limit rendering to 50 items to prevent OOM
                        .map(name => {
                            const s = SPELL_DETAILS[name];
                            const isPrepared = (character.preparedSpells || []).includes(name);
                            const isCantrip = s.level === 0;
                            const limitReached = isCantrip ? currentCantrips >= maxCantrips : currentSpells >= maxSpells;
                            const isDisabled = !isPrepared && limitReached;
+                           const theme = SCHOOL_THEMES[s.school] || { text: 'text-slate-400', icon: 'auto_stories' };
+                           const summary = getSpellSummary(s.description, s.school);
 
                            return (
                                <div key={name} className={`rounded-xl border transition-all ${isPrepared ? 'bg-primary/5 border-primary/50' : 'bg-surface-dark border-white/5'}`}>
@@ -1069,7 +1115,20 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                                                <p className={`font-bold ${isPrepared ? 'text-primary' : isDisabled ? 'text-slate-500' : 'text-white'}`}>{name}</p>
                                                {expandedGrimoireId === name ? <span className="material-symbols-outlined text-[14px] text-slate-500">expand_less</span> : <span className="material-symbols-outlined text-[14px] text-slate-500">expand_more</span>}
                                            </div>
-                                           <p className="text-xs text-slate-500">{s.school} • {s.castingTime}</p>
+                                           <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+                                              <div className={`flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold ${summary.color}`}>
+                                                  <span className="material-symbols-outlined text-[10px]">{summary.icon}</span>
+                                                  {summary.text}
+                                              </div>
+                                              <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
+                                                  <span className="w-0.5 h-0.5 rounded-full bg-slate-600"></span>
+                                                  {formatShort(s.castingTime)}
+                                              </span>
+                                              <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
+                                                  <span className="w-0.5 h-0.5 rounded-full bg-slate-600"></span>
+                                                  {formatShort(s.range)}
+                                              </span>
+                                           </div>
                                        </button>
                                        <button onClick={() => togglePreparedSpell(name)} disabled={isDisabled} className={`p-4 border-l border-white/5 flex items-center justify-center transition-colors ${isDisabled ? 'text-slate-600 cursor-not-allowed' : isPrepared ? 'text-primary bg-primary/10' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
                                             <span className="material-symbols-outlined">{isPrepared ? 'check_circle' : isDisabled ? 'block' : 'add_circle'}</span>
@@ -1092,6 +1151,68 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                </div>
            </div>
        )}
+
+       {selectedSpellName && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setSelectedSpellName(null)}>
+                <div className="w-full max-w-sm bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-2xl transform transition-all scale-100 flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
+                    {(() => {
+                        const spell = SPELL_DETAILS[selectedSpellName];
+                        if (!spell) return null;
+                        const theme = SCHOOL_THEMES[spell.school] || { text: 'text-slate-400', bg: 'bg-white/5', border: 'border-white/5', icon: 'auto_stories' };
+                        
+                        return (
+                        <>
+                            {/* Header */}
+                            <div className="flex justify-between items-start mb-4 shrink-0">
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{selectedSpellName}</h3>
+                                    <span className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1 ${theme.text}`}>
+                                        <span className="material-symbols-outlined text-[14px]">{theme.icon}</span>
+                                        {spell.level === 0 ? 'Cantrip' : `Level ${spell.level}`} {spell.school}
+                                    </span>
+                                </div>
+                                <button onClick={() => setSelectedSpellName(null)} className="text-slate-400 hover:text-slate-600"><span className="material-symbols-outlined">close</span></button>
+                            </div>
+
+                            {/* Stats Grid */}
+                            <div className="grid grid-cols-3 gap-2 mb-4 shrink-0">
+                                <div className="bg-slate-100 dark:bg-white/5 p-2 rounded-lg text-center">
+                                    <span className="material-symbols-outlined text-[16px] text-slate-400 block mb-1">timer</span>
+                                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200 block leading-tight">{spell.castingTime}</span>
+                                </div>
+                                <div className="bg-slate-100 dark:bg-white/5 p-2 rounded-lg text-center">
+                                    <span className="material-symbols-outlined text-[16px] text-slate-400 block mb-1">straighten</span>
+                                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200 block leading-tight">{spell.range}</span>
+                                </div>
+                                <div className="bg-slate-100 dark:bg-white/5 p-2 rounded-lg text-center">
+                                    <span className="material-symbols-outlined text-[16px] text-slate-400 block mb-1">hourglass_empty</span>
+                                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200 block leading-tight">{spell.duration}</span>
+                                </div>
+                            </div>
+
+                            {/* Description */}
+                            <div className="flex-1 overflow-y-auto custom-scrollbar mb-4 pr-1">
+                                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                                    {spell.description}
+                                </p>
+                                <div className="mt-3 pt-3 border-t border-slate-200 dark:border-white/10 text-xs text-slate-500">
+                                    <span className="font-bold">Components:</span> {spell.components}
+                                </div>
+                            </div>
+
+                            {/* Action */}
+                            <div className="shrink-0">
+                                <button onClick={() => { castSpell(spell.level || 0); setSelectedSpellName(null); }} className="w-full flex items-center justify-center gap-2 h-12 rounded-xl bg-primary hover:bg-primary-dark text-background-dark font-bold text-base transition-colors shadow-lg shadow-primary/20 active:scale-95">
+                                    <span className="material-symbols-outlined">auto_fix</span>
+                                    {spell.level === 0 ? 'Lanzar Truco' : 'Lanzar Hechizo'}
+                                </button>
+                            </div>
+                        </>
+                        );
+                    })()}
+                </div>
+            </div>
+        )}
     </div>
   );
   };
