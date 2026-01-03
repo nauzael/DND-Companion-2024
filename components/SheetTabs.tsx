@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Character, SheetTab, InventoryItem, Ability, ItemData, WeaponData, ArmorData } from '../types';
-import { ALL_ITEMS, WEAPONS_DB, ARMOR_DB, GEAR_DB, MASTERY_DESCRIPTIONS } from '../Data/items';
+import { ALL_ITEMS, WEAPONS_DB, ARMOR_DB, GEAR_DB, MAGIC_ITEMS, MASTERY_DESCRIPTIONS } from '../Data/items';
 import { SPELL_DETAILS, CASTER_TYPE, SPELL_LIST_BY_CLASS, CANTRIPS_KNOWN_BY_LEVEL, SPELLS_KNOWN_BY_LEVEL, MAX_SPELL_LEVEL, PREPARED_CASTERS, SPELLCASTING_ABILITY } from '../Data/spells';
 import { CLASS_SAVING_THROWS, SPECIES_DETAILS, CLASS_DETAILS, CLASS_PROGRESSION, SUBCLASS_OPTIONS, HIT_DIE } from '../Data/characterOptions';
 import { SKILL_LIST, SKILL_ABILITY_MAP, SKILL_DESCRIPTIONS } from '../Data/skills';
@@ -111,6 +111,15 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
   const [hpModal, setHpModal] = useState<{ show: boolean; type: 'damage' | 'heal' }>({ show: false, type: 'damage' });
   const [hpAmount, setHpAmount] = useState('');
 
+  // Magic Initiate Detection
+  const magicInitiateType = useMemo(() => {
+      const feats = character.feats || [];
+      if (feats.some(f => f.includes('Magic Initiate (Cleric)'))) return 'Cleric';
+      if (feats.some(f => f.includes('Magic Initiate (Druid)'))) return 'Druid';
+      if (feats.some(f => f.includes('Magic Initiate (Wizard)'))) return 'Wizard';
+      return null;
+  }, [character.feats]);
+
   // Effective Caster Type
   const effectiveCasterType = useMemo(() => {
       if (character.class === 'Warlock') return 'pact';
@@ -120,33 +129,55 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
       return 'none';
   }, [character.class, character.subclass]);
 
-  const isCaster = effectiveCasterType !== 'none';
+  const isCaster = effectiveCasterType !== 'none' || !!magicInitiateType;
 
-  const spellStat = SPELLCASTING_ABILITY[character.class] || (effectiveCasterType === 'third' ? 'INT' : 'INT');
+  // Calculate Spellcasting Ability
+  const spellStat = useMemo(() => {
+      if (SPELLCASTING_ABILITY[character.class]) return SPELLCASTING_ABILITY[character.class];
+      if (effectiveCasterType === 'third') return 'INT';
+      if (magicInitiateType) return SPELLCASTING_ABILITY[magicInitiateType];
+      return 'INT';
+  }, [character.class, effectiveCasterType, magicInitiateType]);
+
   const spellMod = Math.floor(((character.stats[spellStat] || 10) - 10) / 2);
 
   const grimoireSpellList = useMemo(() => {
+      let list: string[] = [];
+      
+      // Class Spells
       if (['Eldritch Knight', 'Arcane Trickster'].includes(character.subclass || '')) {
-          return SPELL_LIST_BY_CLASS['Wizard'] || [];
+          list = [...list, ...(SPELL_LIST_BY_CLASS['Wizard'] || [])];
+      } else if (SPELL_LIST_BY_CLASS[character.class]) {
+          list = [...list, ...(SPELL_LIST_BY_CLASS[character.class] || [])];
       }
-      return SPELL_LIST_BY_CLASS[character.class] || [];
-  }, [character.class, character.subclass]);
+
+      // Feat Spells
+      if (magicInitiateType) {
+          list = [...list, ...(SPELL_LIST_BY_CLASS[magicInitiateType] || [])];
+      }
+      
+      // Deduplicate
+      return Array.from(new Set(list));
+  }, [character.class, character.subclass, magicInitiateType]);
 
   // --- Limits & Max Level Logic ---
 
   // Calculate Allowed Cantrips
   const maxCantrips = useMemo(() => {
+      let count = 0;
       if (effectiveCasterType === 'third') {
-          return character.level >= 10 ? 3 : 2;
+          count = character.level >= 10 ? 3 : 2;
+      } else if (character.class === 'Ranger') {
+          count = character.level >= 10 ? 3 : 2;
+      } else if (character.class === 'Paladin') {
+          count = 0; // Unless Blessed Warrior
+      } else {
+          count = getProgressiveValue(CANTRIPS_KNOWN_BY_LEVEL[character.class], character.level, 0);
       }
-      if (character.class === 'Ranger') {
-          return character.level >= 10 ? 3 : 2;
-      }
-      if (character.class === 'Paladin') {
-          return 0; // Unless Blessed Warrior
-      }
-      return getProgressiveValue(CANTRIPS_KNOWN_BY_LEVEL[character.class], character.level, 0);
-  }, [character.class, character.level, effectiveCasterType]);
+
+      if (magicInitiateType) count += 2;
+      return count;
+  }, [character.class, character.level, effectiveCasterType, magicInitiateType]);
   
   // Calculate Max Spell Level Available
   const maxSpellLevel = useMemo(() => {
@@ -169,12 +200,19 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
       if (effectiveCasterType === 'half') {
           return Math.ceil(character.level / 4);
       }
-      // Full casters
-      return getProgressiveValue(MAX_SPELL_LEVEL['full'], character.level, 0);
-  }, [character.class, character.level, effectiveCasterType]);
+      if (effectiveCasterType === 'full') {
+          return getProgressiveValue(MAX_SPELL_LEVEL['full'], character.level, 0);
+      }
+      
+      // None caster but has feat
+      if (magicInitiateType) return 1;
+
+      return 0;
+  }, [character.class, character.level, effectiveCasterType, magicInitiateType]);
 
   // Calculate Max Spells Prepared/Known
   const maxSpells = useMemo(() => {
+      let count = 0;
       // 2024 Rules: Bard and Ranger are Prepared Casters now
       const preparedClasses = ['Cleric', 'Druid', 'Paladin', 'Wizard', 'Bard', 'Ranger'];
       
@@ -183,27 +221,25 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
           // Full Casters (Bard, Cleric, Druid, Wizard) = Level + Mod
           const isHalf = ['Paladin', 'Ranger'].includes(character.class);
           const levelFactor = isHalf ? Math.floor(character.level / 2) : character.level;
-          return Math.max(1, levelFactor + spellMod);
+          count = Math.max(1, levelFactor + spellMod);
+      } else if (character.class === 'Warlock') {
+          let wCount = getProgressiveValue(SPELLS_KNOWN_BY_LEVEL['Warlock'], character.level, 0);
+          if (character.level >= 11) wCount += 1;
+          if (character.level >= 13) wCount += 1;
+          if (character.level >= 15) wCount += 1;
+          if (character.level >= 17) wCount += 1;
+          count = wCount;
+      } else if (effectiveCasterType === 'third') {
+          if (character.level < 3) count = 0;
+          else count = character.level >= 19 ? 11 : character.level >= 13 ? (character.level - 2) : (character.level >= 8 ? character.level - 2 : 3 + Math.floor((character.level - 3)/1)); 
+      } else {
+          // Default Known Casters (Sorcerer)
+          count = getProgressiveValue(SPELLS_KNOWN_BY_LEVEL[character.class], character.level, 0);
       }
 
-      if (character.class === 'Warlock') {
-          let count = getProgressiveValue(SPELLS_KNOWN_BY_LEVEL['Warlock'], character.level, 0);
-          // Add Mystic Arcanum slots to the total "Known" count so they don't block pact spells
-          if (character.level >= 11) count += 1;
-          if (character.level >= 13) count += 1;
-          if (character.level >= 15) count += 1;
-          if (character.level >= 17) count += 1;
-          return count;
-      }
-
-      if (effectiveCasterType === 'third') {
-          if (character.level < 3) return 0;
-          return character.level >= 19 ? 11 : character.level >= 13 ? (character.level - 2) : (character.level >= 8 ? character.level - 2 : 3 + Math.floor((character.level - 3)/1)); 
-      }
-
-      // Default Known Casters (Sorcerer)
-      return getProgressiveValue(SPELLS_KNOWN_BY_LEVEL[character.class], character.level, 0);
-  }, [character.class, character.level, spellMod, effectiveCasterType]);
+      if (magicInitiateType) count += 1;
+      return count;
+  }, [character.class, character.level, spellMod, effectiveCasterType, magicInitiateType]);
 
   const currentCantrips = useMemo(() => 
       (character.preparedSpells || []).filter(s => SPELL_DETAILS[s]?.level === 0).length, 
@@ -245,7 +281,12 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
       }
       
       if (!found) {
-          alert(`¡No te quedan espacios de conjuro de nivel ${level}!`);
+          // If no slots, check if it's a feat usage or just alert
+          if (magicInitiateType && level === 1 && totalSlots === 0) {
+              alert('Puedes lanzar este hechizo una vez por Descanso Largo sin gastar espacio (Magic Initiate).');
+          } else {
+              alert(`¡No te quedan espacios de conjuro de nivel ${level}!`);
+          }
       }
   };
 
@@ -271,6 +312,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
 
   const finalStats = useMemo(() => {
       const stats = { ...character.stats };
+      // Class Capstones
       if (character.class === 'Barbarian' && character.level >= 20) {
           stats.STR = (stats.STR || 10) + 4;
           stats.CON = (stats.CON || 10) + 4;
@@ -279,8 +321,27 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
           stats.DEX = (stats.DEX || 10) + 4;
           stats.WIS = (stats.WIS || 10) + 4;
       }
+
+      // Check Inventory for Stat Modifying Items
+      const equippedNames = inventory.filter(i => i.equipped).map(i => i.name);
+      
+      if (equippedNames.includes('Gauntlets of Ogre Power')) stats.STR = Math.max(stats.STR, 19);
+      if (equippedNames.includes('Headband of Intellect')) stats.INT = Math.max(stats.INT, 19);
+      if (equippedNames.includes('Amulet of Health')) stats.CON = Math.max(stats.CON, 19);
+      
+      // Belts of Giant Strength
+      if (equippedNames.includes('Belt of Giant Strength (Hill)')) stats.STR = Math.max(stats.STR, 21);
+      if (equippedNames.includes('Belt of Giant Strength (Frost)')) stats.STR = Math.max(stats.STR, 23);
+      if (equippedNames.includes('Belt of Giant Strength (Stone)')) stats.STR = Math.max(stats.STR, 23);
+      if (equippedNames.includes('Belt of Giant Strength (Fire)')) stats.STR = Math.max(stats.STR, 25);
+      if (equippedNames.includes('Belt of Giant Strength (Cloud)')) stats.STR = Math.max(stats.STR, 27);
+      if (equippedNames.includes('Belt of Giant Strength (Storm)')) stats.STR = Math.max(stats.STR, 29);
+
+      // Potions (if "equipped")
+      if (equippedNames.includes('Potion of Giant Strength (Hill)')) stats.STR = Math.max(stats.STR, 21);
+
       return stats;
-  }, [character.stats, character.class, character.level]);
+  }, [character.stats, character.class, character.level, inventory]);
 
   const strMod = Math.floor(((finalStats.STR || 10) - 10) / 2);
   const dexMod = Math.floor(((finalStats.DEX || 10) - 10) / 2);
@@ -290,10 +351,16 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
       let hasArmor = false;
       let hasShield = false;
       let shieldBonus = 0;
+      let magicBonus = 0;
+
       inventory.forEach(item => {
           if (!item.equipped) return;
-          const armorData = ARMOR_DB[item.name];
-          if (armorData) {
+          const itemData = ALL_ITEMS[item.name];
+          if (!itemData) return;
+
+          // Armor Calculation
+          if (itemData.type === 'Armor') {
+              const armorData = itemData as ArmorData;
               if (armorData.armorType === 'Shield') {
                   shieldBonus += armorData.baseAC;
                   hasShield = true;
@@ -306,7 +373,15 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                   ac = armorData.baseAC + mod;
               }
           }
+
+          // Magic Item AC Bonuses
+          if (item.name === 'Ring of Protection') magicBonus += 1;
+          if (item.name === 'Cloak of Protection') magicBonus += 1;
+          if (item.name.includes('Armor +1')) magicBonus += 1; // Generic +1 catch (if not built into baseAC)
+          // Specific Named Items
+          if (item.name === 'Animated Shield' && item.equipped) shieldBonus += 2; // Assuming animated shield adds to shield bonus
       });
+
       if (!hasArmor) {
           if (character.class === 'Barbarian') {
               const conMod = Math.floor(((finalStats.CON || 10) - 10) / 2);
@@ -317,10 +392,18 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
           } else if (character.class === 'Sorcerer' && character.subclass === 'Draconic Sorcery') {
               ac = 13 + dexMod;
           }
+
+          // Bracers of Defense check
+          const equippedNames = inventory.filter(i => i.equipped).map(i => i.name);
+          if (equippedNames.includes('Bracers of Defense') && !hasShield) {
+              magicBonus += 2;
+          }
       }
+
       const hasDefenseStyle = character.feats.some(f => f.includes('Fighting Style: Defense') || f.includes('Defense'));
       if (hasDefenseStyle && hasArmor) ac += 1;
-      return ac + shieldBonus;
+
+      return ac + shieldBonus + magicBonus;
   }, [inventory, dexMod, character.class, character.stats, finalStats, character.feats]);
 
   const formatModifier = (val: number) => `${val >= 0 ? '+' : ''}${val}`;
@@ -345,12 +428,16 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
   const toggleEquip = (itemId: string) => {
       const itemToToggle = inventory.find(i => i.id === itemId);
       if (!itemToToggle) return;
+      
       const itemData = ALL_ITEMS[itemToToggle.name];
       const isArmor = itemData?.type === 'Armor';
       const isShield = isArmor && (itemData as ArmorData).armorType === 'Shield';
       const isStandardArmor = isArmor && !isShield;
+      
       const newInv = inventory.map(item => {
           if (item.id === itemId) return { ...item, equipped: !item.equipped };
+          
+          // Logic to unequip other armor/shields if necessary
           if (isShield && !itemToToggle.equipped && item.equipped) {
                const idata = ALL_ITEMS[item.name];
                if (idata?.type === 'Armor' && (idata as ArmorData).armorType === 'Shield') {
@@ -505,6 +592,13 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
              if (hasDueling && weapon.rangeType === 'Melee' && !isTwoHanded && !isDualWielding) { dmgMod += 2; activeBonuses.push("Dueling +2"); }
              if (hasThrown && isThrown) { dmgMod += 2; activeBonuses.push("Thrown +2"); }
 
+             // Magic Weapon Bonuses
+             if (item.name.includes('+1')) { toHit += 1; dmgMod += 1; }
+             if (item.name.includes('+2')) { toHit += 2; dmgMod += 2; }
+             if (item.name.includes('+3')) { toHit += 3; dmgMod += 3; }
+             if (item.name === 'Sun Blade') { toHit += 2; dmgMod += 2; }
+             if (item.name === 'Holy Avenger') { toHit += 3; dmgMod += 3; }
+
              return (
              <div key={item.id} className="rounded-2xl bg-white dark:bg-surface-dark p-4 shadow-sm ring-1 ring-slate-200 dark:ring-white/5 hover:ring-primary/50 dark:hover:ring-primary/50 transition-all">
                 <div className="flex justify-between items-start mb-3">
@@ -551,7 +645,11 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
             {(['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'] as Ability[]).map(stat => {
                 const mod = Math.floor(((finalStats[stat] || 10) - 10) / 2);
                 const isProf = CLASS_SAVING_THROWS[character.class]?.includes(stat);
-                const save = mod + (isProf ? character.profBonus : 0);
+                let save = mod + (isProf ? character.profBonus : 0);
+                
+                // Magic Item Save Bonuses
+                if (inventory.some(i => i.equipped && (i.name === 'Cloak of Protection' || i.name === 'Ring of Protection'))) save += 1;
+                
                 return (
                     <div key={stat} className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${isProf ? 'bg-primary/10 border-primary/30' : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-white/5'}`}>
                         <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">{stat}</span>
@@ -590,7 +688,6 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
   };
 
   const renderInventory = () => {
-    // ... same as before ...
     const totalWeight = inventory.reduce((acc, item) => {
         const itemData = ALL_ITEMS[item.name];
         return acc + (itemData ? itemData.weight * item.quantity : 0);
@@ -600,12 +697,14 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
     const backpackItems = inventory.filter(i => !i.equipped);
 
     const renderItemRow = (item: InventoryItem) => {
-        const itemData = ALL_ITEMS[item.name] || { name: item.name, type: 'Gear', weight: 0, cost: '-' };
-        const isEquippable = itemData.type === 'Weapon' || itemData.type === 'Armor';
+        const itemData = ALL_ITEMS[item.name] || { name: item.name, type: 'Gear', weight: 0, cost: '-', description: '' };
+        const isMagic = MAGIC_ITEMS[item.name] !== undefined;
+        const isEquippable = itemData.type === 'Weapon' || itemData.type === 'Armor' || isMagic;
+        
         return (
         <div key={item.id} onClick={() => setSelectedItem(item)} className="group relative flex items-center gap-4 p-3 rounded-xl bg-surface-light dark:bg-surface-dark border border-gray-200 dark:border-white/5 shadow-sm active:scale-[0.99] transition-transform cursor-pointer">
             <div className={`size-12 rounded-lg flex items-center justify-center shrink-0 relative overflow-hidden ${item.equipped ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-black/40 text-slate-600 dark:text-white'}`}>
-            <span className="material-symbols-outlined relative z-10">{itemData.type === 'Weapon' ? 'swords' : itemData.type === 'Armor' ? 'shield' : 'backpack'}</span>
+            <span className="material-symbols-outlined relative z-10">{itemData.type === 'Weapon' ? 'swords' : itemData.type === 'Armor' ? 'shield' : isMagic ? 'auto_awesome' : 'backpack'}</span>
             </div>
             <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
@@ -661,7 +760,8 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
             <div className="w-full max-w-sm bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-2xl transform transition-all scale-100" onClick={e => e.stopPropagation()}>
                 {(() => {
                     const itemData = (ALL_ITEMS[selectedItem.name] || { name: selectedItem.name, type: 'Gear', weight: 0, cost: '-', description: '' }) as ItemData;
-                    const isEquippable = itemData.type === 'Weapon' || itemData.type === 'Armor';
+                    const isMagic = MAGIC_ITEMS[selectedItem.name] !== undefined;
+                    const isEquippable = itemData.type === 'Weapon' || itemData.type === 'Armor' || isMagic;
                     const asWeapon = itemData as WeaponData;
                     const asArmor = itemData as ArmorData;
                     return (
@@ -686,7 +786,6 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
   };
 
   const renderFeatures = () => {
-    // ... same feature code ...
     const features: { name: string; description: string; level: number; source: string }[] = [];
     const speciesData = SPECIES_DETAILS[character.species];
     if (speciesData) {

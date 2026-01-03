@@ -63,6 +63,20 @@ export const WEAPONS_DB: Record<string, WeaponData> = {
     
     // Special
     'Unarmed Strike': { name: 'Unarmed Strike', type: 'Weapon', category: 'Simple', rangeType: 'Melee', damage: '1', damageType: 'Bludgeoning', properties: [], mastery: '-', weight: 0, cost: '-' },
+
+    // Magic Weapons
+    'Sun Blade': { name: 'Sun Blade', type: 'Weapon', category: 'Martial', rangeType: 'Melee', damage: '1d8', damageType: 'Radiant', properties: ['Finesse', 'Versatile (1d10)'], mastery: 'Sap', weight: 3, cost: 'Rare (4,000 GP)', description: 'Requires Attunement. +2 bonus to attack/damage. Deals Radiant damage. +1d8 vs Undead. Emits sunlight.' },
+    'Flame Tongue (Longsword)': { name: 'Flame Tongue (Longsword)', type: 'Weapon', category: 'Martial', rangeType: 'Melee', damage: '1d8', damageType: 'Slashing', properties: ['Versatile (1d10)'], mastery: 'Sap', weight: 3, cost: 'Rare (4,000 GP)', description: 'Requires Attunement. Bonus Action to ignite: +2d6 Fire damage. Sheds bright light.' },
+    'Vorpal Sword (Longsword)': { name: 'Vorpal Sword (Longsword)', type: 'Weapon', category: 'Martial', rangeType: 'Melee', damage: '1d8', damageType: 'Slashing', properties: ['Versatile (1d10)'], mastery: 'Sap', weight: 3, cost: 'Legendary (200,000 GP)', description: 'Requires Attunement. +3 bonus. Ignores resistance to Slashing. Natural 20 decapitates creature.' },
+    'Javelin of Lightning': { name: 'Javelin of Lightning', type: 'Weapon', category: 'Simple', rangeType: 'Melee', damage: '1d6', damageType: 'Piercing', properties: ['Thrown (30/120)'], mastery: 'Slow', weight: 2, cost: 'Uncommon (400 GP)', description: 'Transform into lightning bolt (Line 5ft wide). 4d6 Lightning damage (DC 13 Dex save).' },
+    'Dagger of Venom': { name: 'Dagger of Venom', type: 'Weapon', category: 'Simple', rangeType: 'Melee', damage: '1d4', damageType: 'Piercing', properties: ['Finesse', 'Light', 'Thrown (20/60)'], mastery: 'Nick', weight: 1, cost: 'Rare (4,000 GP)', description: '+1 bonus. Action to coat in poison: DC 15 Con save or 2d10 Poison damage + Poisoned condition.' },
+    'Frost Brand (Greatsword)': { name: 'Frost Brand (Greatsword)', type: 'Weapon', category: 'Martial', rangeType: 'Melee', damage: '2d6', damageType: 'Slashing', properties: ['Heavy', 'Two-Handed'], mastery: 'Graze', weight: 6, cost: 'Very Rare (40,000 GP)', description: 'Requires Attunement. +1d6 Cold damage. Resistance to Fire. Extinguishes nonmagical flames.' },
+    'Trident of Fish Command': { name: 'Trident of Fish Command', type: 'Weapon', category: 'Martial', rangeType: 'Melee', damage: '1d8', damageType: 'Piercing', properties: ['Thrown (20/60)', 'Versatile (1d10)'], mastery: 'Topple', weight: 4, cost: 'Uncommon (400 GP)', description: 'Requires Attunement. 3 charges to cast Dominate Beast (DC 15) on beasts with swim speed.' },
+    'Mace of Disruption': { name: 'Mace of Disruption', type: 'Weapon', category: 'Simple', rangeType: 'Melee', damage: '1d6', damageType: 'Bludgeoning', properties: [], mastery: 'Sap', weight: 4, cost: 'Rare (4,000 GP)', description: 'Requires Attunement. +2d6 Radiant vs Fiends/Undead. DC 15 Wis save or be destroyed if under 25 HP.' },
+    'Holy Avenger (Longsword)': { name: 'Holy Avenger (Longsword)', type: 'Weapon', category: 'Martial', rangeType: 'Melee', damage: '1d8', damageType: 'Slashing', properties: ['Versatile (1d10)'], mastery: 'Sap', weight: 3, cost: 'Legendary (200,000 GP)', description: 'Requires Attunement (Paladin). +3 bonus. +2d10 Radiant vs Fiend/Undead. Aura of advantage vs spells.' },
+    'Weapon +1': { name: 'Weapon +1', type: 'Weapon', category: 'Martial', rangeType: 'Melee', damage: '1d8', damageType: 'Slashing', properties: [], mastery: '-', weight: 3, cost: 'Uncommon (400 GP)', description: '+1 bonus to attack and damage rolls.' },
+    'Weapon +2': { name: 'Weapon +2', type: 'Weapon', category: 'Martial', rangeType: 'Melee', damage: '1d8', damageType: 'Slashing', properties: [], mastery: '-', weight: 3, cost: 'Rare (4,000 GP)', description: '+2 bonus to attack and damage rolls.' },
+    'Weapon +3': { name: 'Weapon +3', type: 'Weapon', category: 'Martial', rangeType: 'Melee', damage: '1d8', damageType: 'Slashing', properties: [], mastery: '-', weight: 3, cost: 'Very Rare (40,000 GP)', description: '+3 bonus to attack and damage rolls.' },
 };
 
 // --- ARMOR ---
@@ -86,7 +100,17 @@ export const ARMOR_DB: Record<string, ArmorData> = {
     'Plate Armor': { name: 'Plate Armor', type: 'Armor', armorType: 'Heavy', baseAC: 18, maxDex: 0, stealthDisadvantage: true, strengthReq: 15, weight: 65, cost: '1,500 GP' },
     
     // Shield
-    'Shield': { name: 'Shield', type: 'Armor', armorType: 'Shield', baseAC: 2, stealthDisadvantage: false, strengthReq: 0, weight: 6, cost: '10 GP' }
+    'Shield': { name: 'Shield', type: 'Armor', armorType: 'Shield', baseAC: 2, stealthDisadvantage: false, strengthReq: 0, weight: 6, cost: '10 GP' },
+
+    // Magic Armor
+    'Adamantine Armor (Plate)': { name: 'Adamantine Armor (Plate)', type: 'Armor', armorType: 'Heavy', baseAC: 18, maxDex: 0, stealthDisadvantage: true, strengthReq: 15, weight: 65, cost: 'Uncommon (500+ GP)', description: 'Critical hits against you become normal hits.' },
+    'Mithral Armor (Chain Mail)': { name: 'Mithral Armor (Chain Mail)', type: 'Armor', armorType: 'Heavy', baseAC: 16, maxDex: 0, stealthDisadvantage: false, strengthReq: 0, weight: 55, cost: 'Uncommon (500+ GP)', description: 'No Strength requirement. No Disadvantage on Stealth.' },
+    'Sentinel Shield': { name: 'Sentinel Shield', type: 'Armor', armorType: 'Shield', baseAC: 2, stealthDisadvantage: false, strengthReq: 0, weight: 6, cost: 'Uncommon (400 GP)', description: 'Advantage on Initiative and Perception.' },
+    'Arrow-Catching Shield': { name: 'Arrow-Catching Shield', type: 'Armor', armorType: 'Shield', baseAC: 2, stealthDisadvantage: false, strengthReq: 0, weight: 6, cost: 'Rare (4,000 GP)', description: 'Requires Attunement. +2 AC vs Ranged Attacks. Reaction to become target of ranged attack.' },
+    'Armor +1': { name: 'Armor +1', type: 'Armor', armorType: 'Light', baseAC: 12, stealthDisadvantage: false, strengthReq: 0, weight: 10, cost: 'Rare (4,000 GP)', description: '+1 bonus to AC.' },
+    'Shield +1': { name: 'Shield +1', type: 'Armor', armorType: 'Shield', baseAC: 3, stealthDisadvantage: false, strengthReq: 0, weight: 6, cost: 'Uncommon (400 GP)', description: '+1 bonus to AC.' },
+    'Elven Chain': { name: 'Elven Chain', type: 'Armor', armorType: 'Medium', baseAC: 14, maxDex: 2, stealthDisadvantage: false, strengthReq: 0, weight: 20, cost: 'Rare (4,000 GP)', description: '+1 bonus to AC. Considered proficient even if you lack Medium armor training.' },
+    'Glamoured Studded Leather': { name: 'Glamoured Studded Leather', type: 'Armor', armorType: 'Light', baseAC: 13, stealthDisadvantage: false, strengthReq: 0, weight: 13, cost: 'Rare (4,000 GP)', description: '+1 bonus to AC. Bonus action to change appearance.' },
 };
 
 // --- GEAR & TOOLS ---
@@ -146,11 +170,71 @@ export const GEAR_DB: Record<string, ItemData> = {
     'Navigator\'s Tools': { name: 'Navigator\'s Tools', type: 'Tool', weight: 2, cost: '25 GP' },
 };
 
+// --- MAGIC ITEMS (Wondrous, Rings, Rods, Potions, etc.) ---
+export const MAGIC_ITEMS: Record<string, ItemData> = {
+    // Potions
+    'Potion of Healing (Greater)': { name: 'Potion of Healing (Greater)', type: 'Gear', weight: 0.5, cost: 'Uncommon (100+ GP)', description: 'Regain 4d4 + 4 HP.' },
+    'Potion of Healing (Superior)': { name: 'Potion of Healing (Superior)', type: 'Gear', weight: 0.5, cost: 'Rare (500+ GP)', description: 'Regain 8d4 + 8 HP.' },
+    'Potion of Healing (Supreme)': { name: 'Potion of Healing (Supreme)', type: 'Gear', weight: 0.5, cost: 'Very Rare (5,000+ GP)', description: 'Regain 10d4 + 20 HP.' },
+    'Potion of Invisibility': { name: 'Potion of Invisibility', type: 'Gear', weight: 0.5, cost: 'Very Rare', description: 'Gain Invisible condition for 1 hour.' },
+    'Potion of Speed': { name: 'Potion of Speed', type: 'Gear', weight: 0.5, cost: 'Very Rare', description: 'Gain effect of Haste spell for 1 minute.' },
+    'Potion of Giant Strength (Hill)': { name: 'Potion of Giant Strength (Hill)', type: 'Gear', weight: 0.5, cost: 'Uncommon', description: 'Strength becomes 21 for 1 hour.' },
+    'Oil of Slipperiness': { name: 'Oil of Slipperiness', type: 'Gear', weight: 0.5, cost: 'Uncommon', description: 'Freedom of Movement for 8 hours.' },
+
+    // Wondrous Items
+    'Bag of Holding': { name: 'Bag of Holding', type: 'Gear', weight: 15, cost: 'Uncommon', description: 'Holds 500 lbs, 64 cubic feet. Always weighs 15 lbs.' },
+    'Boots of Elvenkind': { name: 'Boots of Elvenkind', type: 'Gear', weight: 0, cost: 'Uncommon', description: 'Steps make no sound. Advantage on Stealth.' },
+    'Cloak of Protection': { name: 'Cloak of Protection', type: 'Gear', weight: 3, cost: 'Uncommon', description: 'Requires Attunement. +1 bonus to AC and Saving Throws.' },
+    'Gauntlets of Ogre Power': { name: 'Gauntlets of Ogre Power', type: 'Gear', weight: 0, cost: 'Uncommon', description: 'Requires Attunement. Strength becomes 19.' },
+    'Headband of Intellect': { name: 'Headband of Intellect', type: 'Gear', weight: 0, cost: 'Uncommon', description: 'Requires Attunement. Intelligence becomes 19.' },
+    'Winged Boots': { name: 'Winged Boots', type: 'Gear', weight: 0, cost: 'Uncommon', description: 'Requires Attunement. Fly speed equal to walking speed for 4 hours total.' },
+    'Immovable Rod': { name: 'Immovable Rod', type: 'Gear', weight: 2, cost: 'Uncommon', description: 'Action to fix in space. Holds 8,000 lbs.' },
+    'Lantern of Revealing': { name: 'Lantern of Revealing', type: 'Gear', weight: 2, cost: 'Uncommon', description: 'Sheds bright light 30ft. Invisible creatures are visible in the light.' },
+    'Broom of Flying': { name: 'Broom of Flying', type: 'Gear', weight: 3, cost: 'Uncommon', description: 'Fly speed 50ft.' },
+    'Alchemy Jug': { name: 'Alchemy Jug', type: 'Gear', weight: 12, cost: 'Uncommon', description: 'Produces liquids like acid, beer, honey, mayonnaise, water, wine.' },
+    'Cap of Water Breathing': { name: 'Cap of Water Breathing', type: 'Gear', weight: 0, cost: 'Uncommon', description: 'Breathe underwater.' },
+    'Cloak of the Manta Ray': { name: 'Cloak of the Manta Ray', type: 'Gear', weight: 3, cost: 'Uncommon', description: 'Breathe underwater and Swim Speed 60ft.' },
+    'Driftglobe': { name: 'Driftglobe', type: 'Gear', weight: 1, cost: 'Uncommon', description: 'Cast Light or Daylight. Floats near you.' },
+    'Eversmoking Bottle': { name: 'Eversmoking Bottle', type: 'Gear', weight: 1, cost: 'Uncommon', description: 'Creates cloud of smoke.' },
+    'Goggles of Night': { name: 'Goggles of Night', type: 'Gear', weight: 0, cost: 'Uncommon', description: 'Darkvision 60ft.' },
+    'Helm of Comprehending Languages': { name: 'Helm of Comprehending Languages', type: 'Gear', weight: 3, cost: 'Uncommon', description: 'Cast Comprehend Languages.' },
+    'Heward\'s Handy Haversack': { name: 'Heward\'s Handy Haversack', type: 'Gear', weight: 5, cost: 'Rare', description: 'Extradimensional storage. Weighs 5 lbs.' },
+    'Portable Hole': { name: 'Portable Hole', type: 'Gear', weight: 0, cost: 'Rare', description: 'Unfolds into 10ft deep extradimensional hole.' },
+    'Rope of Climbing': { name: 'Rope of Climbing', type: 'Gear', weight: 3, cost: 'Uncommon', description: '60ft rope that animates and climbs.' },
+    'Slippers of Spider Climbing': { name: 'Slippers of Spider Climbing', type: 'Gear', weight: 0.5, cost: 'Uncommon', description: 'Requires Attunement. Climb speed. Move on walls/ceilings.' },
+    
+    // Rings
+    'Ring of Protection': { name: 'Ring of Protection', type: 'Gear', weight: 0, cost: 'Rare', description: 'Requires Attunement. +1 bonus to AC and Saving Throws.' },
+    'Ring of Invisibility': { name: 'Ring of Invisibility', type: 'Gear', weight: 0, cost: 'Legendary', description: 'Requires Attunement. Turn invisible as an action.' },
+    'Ring of Feather Falling': { name: 'Ring of Feather Falling', type: 'Gear', weight: 0, cost: 'Rare', description: 'Requires Attunement. Immune to falling damage.' },
+    'Ring of Water Walking': { name: 'Ring of Water Walking', type: 'Gear', weight: 0, cost: 'Uncommon', description: 'Walk on liquid surfaces.' },
+    'Ring of Mind Shielding': { name: 'Ring of Mind Shielding', type: 'Gear', weight: 0, cost: 'Uncommon', description: 'Requires Attunement. Immune to mind reading.' },
+
+    // Rods & Wands
+    'Rod of the Pact Keeper +1': { name: 'Rod of the Pact Keeper +1', type: 'Gear', weight: 2, cost: 'Uncommon', description: 'Requires Attunement (Warlock). +1 to spell attacks/DC. Regain 1 slot/day.' },
+    'Wand of Magic Missiles': { name: 'Wand of Magic Missiles', type: 'Gear', weight: 1, cost: 'Uncommon', description: '7 charges. Cast Magic Missile.' },
+    'Wand of Fireballs': { name: 'Wand of Fireballs', type: 'Gear', weight: 1, cost: 'Rare', description: 'Requires Attunement. 7 charges. Cast Fireball.' },
+    'Wand of the War Mage +1': { name: 'Wand of the War Mage +1', type: 'Gear', weight: 1, cost: 'Uncommon', description: 'Requires Attunement. +1 to spell attacks. Ignore half cover.' },
+    'Wand of Web': { name: 'Wand of Web', type: 'Gear', weight: 1, cost: 'Uncommon', description: 'Requires Attunement. 7 charges. Cast Web.' },
+
+    // Treasures
+    '10 GP Gemstone': { name: '10 GP Gemstone', type: 'Gear', weight: 0, cost: '10 GP', description: 'Azurite, Banded Agate, Blue Quartz, etc.' },
+    '50 GP Gemstone': { name: '50 GP Gemstone', type: 'Gear', weight: 0, cost: '50 GP', description: 'Bloodstone, Carnelian, Chalcedony, etc.' },
+    '100 GP Gemstone': { name: '100 GP Gemstone', type: 'Gear', weight: 0, cost: '100 GP', description: 'Amber, Amethyst, Coral, Jade, Pearl, etc.' },
+    '500 GP Gemstone': { name: '500 GP Gemstone', type: 'Gear', weight: 0, cost: '500 GP', description: 'Alexandrite, Aquamarine, Black Pearl, Topaz.' },
+    '1000 GP Gemstone': { name: '1000 GP Gemstone', type: 'Gear', weight: 0, cost: '1,000 GP', description: 'Black Opal, Blue Sapphire, Emerald, Fire Opal.' },
+    '5000 GP Gemstone': { name: '5000 GP Gemstone', type: 'Gear', weight: 0, cost: '5,000 GP', description: 'Black Sapphire, Diamond, Jacinth, Ruby.' },
+    'Art Object (25 GP)': { name: 'Art Object (25 GP)', type: 'Gear', weight: 1, cost: '25 GP', description: 'Silver ewer, Carved bone statuette, Gold bracelet.' },
+    'Art Object (250 GP)': { name: 'Art Object (250 GP)', type: 'Gear', weight: 1, cost: '250 GP', description: 'Gold ring, Carved ivory statuette, Large gold bracelet.' },
+    'Art Object (750 GP)': { name: 'Art Object (750 GP)', type: 'Gear', weight: 2, cost: '750 GP', description: 'Silver chalice with moonstones, Gold idol.' },
+};
+
 // Combine all for lookup
 export const ALL_ITEMS: Record<string, ItemData> = {
     ...WEAPONS_DB,
     ...ARMOR_DB,
-    ...GEAR_DB
+    ...GEAR_DB,
+    ...MAGIC_ITEMS
 };
 
 export const TRINKETS: string[] = [
