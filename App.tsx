@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Character, ViewState } from './types';
 import { MOCK_CHARACTERS } from './constants';
 import CharacterList from './components/CharacterList';
@@ -8,8 +8,24 @@ import SheetTabs from './components/SheetTabs';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('list');
-  const [characters, setCharacters] = useState<Character[]>(MOCK_CHARACTERS);
+  
+  // Initialize characters from localStorage if available, otherwise use mocks
+  const [characters, setCharacters] = useState<Character[]>(() => {
+    try {
+      const saved = localStorage.getItem('dnd-characters');
+      return saved ? JSON.parse(saved) : MOCK_CHARACTERS;
+    } catch (e) {
+      console.error("Failed to load characters from local storage", e);
+      return MOCK_CHARACTERS;
+    }
+  });
+
   const [activeCharacterId, setActiveCharacterId] = useState<string | null>(null);
+
+  // Persist characters to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('dnd-characters', JSON.stringify(characters));
+  }, [characters]);
 
   const activeCharacter = characters.find(c => c.id === activeCharacterId) || characters[0];
 
