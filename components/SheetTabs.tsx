@@ -354,6 +354,14 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
       }
   };
 
+  const getItemData = (name: string): ItemData | undefined => {
+      if (ALL_ITEMS[name]) return ALL_ITEMS[name];
+      // Fallback: try to find item without quantity suffix e.g. "Dagger (2)" -> "Dagger"
+      const match = name.match(/^(.*?) \((\d+)\)$/);
+      if (match && ALL_ITEMS[match[1]]) return ALL_ITEMS[match[1]];
+      return undefined;
+  };
+
   const finalStats = useMemo(() => {
       const stats = { ...character.stats };
       // Class Capstones
@@ -429,7 +437,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
 
       inventory.forEach(item => {
           if (!item.equipped) return;
-          const itemData = ALL_ITEMS[item.name];
+          const itemData = getItemData(item.name);
           if (!itemData) return;
 
           // Armor Calculation
@@ -505,7 +513,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
       const itemToToggle = inventory.find(i => i.id === itemId);
       if (!itemToToggle) return;
       
-      const itemData = ALL_ITEMS[itemToToggle.name];
+      const itemData = getItemData(itemToToggle.name);
       const isArmor = itemData?.type === 'Armor';
       const isShield = isArmor && (itemData as ArmorData).armorType === 'Shield';
       const isStandardArmor = isArmor && !isShield;
@@ -515,13 +523,13 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
           
           // Logic to unequip other armor/shields if necessary
           if (isShield && !itemToToggle.equipped && item.equipped) {
-               const idata = ALL_ITEMS[item.name];
+               const idata = getItemData(item.name);
                if (idata?.type === 'Armor' && (idata as ArmorData).armorType === 'Shield') {
                    return { ...item, equipped: false };
                }
           }
           if (isStandardArmor && !itemToToggle.equipped && item.equipped) {
-               const idata = ALL_ITEMS[item.name];
+               const idata = getItemData(item.name);
                if (idata?.type === 'Armor' && (idata as ArmorData).armorType !== 'Shield') {
                    return { ...item, equipped: false };
                }
@@ -584,10 +592,10 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
         else if (equippedWraps.name.includes('+3')) unarmedBonus = 3;
     }
 
-    // Fix: Check ALL_ITEMS for type 'Weapon' instead of strictly WEAPONS_DB to include Magic Weapons
+    // Fix: Check ALL_ITEMS for type 'Weapon' safely using getItemData
     const equippedWeapons = inventory.filter(i => {
         if (!i.equipped) return false;
-        const itemData = ALL_ITEMS[i.name];
+        const itemData = getItemData(i.name);
         return itemData && itemData.type === 'Weapon';
     });
     
@@ -660,7 +668,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
       <div className="flex flex-col gap-3 mb-6">
          {equippedWeapons.map(item => {
              // Cast item to WeaponData safely as we filtered by type='Weapon'
-             const weapon = ALL_ITEMS[item.name] as WeaponData;
+             const weapon = getItemData(item.name) as WeaponData;
              if (!weapon) return null;
 
              const isFinesse = weapon.properties.includes('Finesse');
@@ -707,7 +715,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                    <div className="flex gap-3">
                        <div className="flex size-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-black/30 text-slate-600 dark:text-slate-300"><span className="material-symbols-outlined text-[24px]">swords</span></div>
                        <div>
-                          <h4 className="font-bold text-slate-900 dark:text-white">{weapon.name}</h4>
+                          <h4 className="font-bold text-slate-900 dark:text-white">{item.name}</h4>
                           <div className="flex gap-1 mt-1 flex-wrap">
                               {weapon.properties.map(p => (<span key={p} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-300">{p}</span>))}
                               {isMonk && (isMonkWeapon || weapon.name === 'Unarmed Strike') && (<span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300">Monk</span>)}
@@ -791,7 +799,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
 
   const renderInventory = () => {
     const totalWeight = inventory.reduce((acc, item) => {
-        const itemData = ALL_ITEMS[item.name];
+        const itemData = getItemData(item.name);
         return acc + (itemData ? itemData.weight * item.quantity : 0);
     }, 0);
     const carryCap = (finalStats.STR || 10) * 15;
@@ -799,7 +807,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
     const backpackItems = inventory.filter(i => !i.equipped);
 
     const renderItemRow = (item: InventoryItem) => {
-        const itemData = ALL_ITEMS[item.name] || { name: item.name, type: 'Gear', weight: 0, cost: '-', description: '' };
+        const itemData = getItemData(item.name) || { name: item.name, type: 'Gear', weight: 0, cost: '-', description: '' };
         const isMagic = MAGIC_ITEMS[item.name] !== undefined;
         const isEquippable = itemData.type === 'Weapon' || itemData.type === 'Armor' || isMagic;
         
@@ -861,7 +869,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setSelectedItem(null)}>
             <div className="w-full max-w-sm bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-2xl transform transition-all scale-100" onClick={e => e.stopPropagation()}>
                 {(() => {
-                    const itemData = (ALL_ITEMS[selectedItem.name] || { name: selectedItem.name, type: 'Gear', weight: 0, cost: '-', description: '' }) as ItemData;
+                    const itemData = (getItemData(selectedItem.name) || { name: selectedItem.name, type: 'Gear', weight: 0, cost: '-', description: '' }) as ItemData;
                     const isMagic = MAGIC_ITEMS[selectedItem.name] !== undefined;
                     const isEquippable = itemData.type === 'Weapon' || itemData.type === 'Armor' || isMagic;
                     const asWeapon = itemData as WeaponData;

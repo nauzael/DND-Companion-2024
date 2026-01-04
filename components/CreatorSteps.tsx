@@ -164,6 +164,11 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   // ASI Decisions State (Level -> Decision)
   const [asiDecisions, setAsiDecisions] = useState<Record<number, AsiDecision>>({});
 
+  // Feat Selection Modal State
+  const [showFeatModal, setShowFeatModal] = useState(false);
+  const [featModalContext, setFeatModalContext] = useState<{ type: 'human' | 'asi', level?: number } | null>(null);
+  const [featSearchQuery, setFeatSearchQuery] = useState('');
+
   // Generate a random trinket once per session/reset to avoid memory churn on re-renders
   const [trinket] = useState<string>(() => {
       const randomIndex = Math.floor(Math.random() * TRINKETS.length);
@@ -312,6 +317,21 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
           ...prev,
           [level]: { ...(prev[level] || { type: 'stat', stat1: 'STR', stat2: 'STR' }), ...updates }
       }));
+  };
+
+  const openFeatModal = (context: { type: 'human' | 'asi', level?: number }) => {
+      setFeatModalContext(context);
+      setFeatSearchQuery('');
+      setShowFeatModal(true);
+  };
+
+  const handleFeatSelect = (featName: string) => {
+      if (featModalContext?.type === 'human') {
+          setSelectedFeat(featName);
+      } else if (featModalContext?.type === 'asi' && featModalContext.level) {
+          handleAsiChange(featModalContext.level, { feat: featName });
+      }
+      setShowFeatModal(false);
   };
 
   const canProceed = () => {
@@ -513,12 +533,16 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                 speciesData?.name === 'Human' ? selectedFeat : undefined,
                 ...asiLevels.map(l => asiDecisions[l]?.type === 'feat' ? asiDecisions[l]?.feat : undefined)
             ].filter((f): f is string => !!f),
-            inventory: [trinket, ...(backgroundData?.equipment || [])].map((item, i) => ({
-              id: `init-item-${i}`,
-              name: item,
-              quantity: 1,
-              equipped: false
-            })),
+            inventory: [trinket, ...(backgroundData?.equipment || [])].map((itemStr, i) => {
+              // Parse quantity from string like "Dagger (2)"
+              const match = itemStr.match(/^(.*?) \((\d+)\)$/);
+              return {
+                id: `init-item-${i}`,
+                name: match ? match[1] : itemStr,
+                quantity: match ? parseInt(match[2]) : 1,
+                equipped: false
+              };
+            }),
             imageUrl: charImage
         };
         onFinish(newCharacter);
@@ -559,6 +583,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
       <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar pb-5">
         {step === 1 && (
+            // ... (Content of Step 1 same as before)
             <>
                 <div className="px-6 pt-3 pb-1">
                     <h1 className="text-3xl font-bold leading-tight tracking-tight text-slate-900 dark:text-white">
@@ -1174,16 +1199,15 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                         </div>
                                     ) : (
                                         <div>
-                                            <select 
-                                                value={decision.feat || ''}
-                                                onChange={(e) => handleAsiChange(lvl, { feat: e.target.value })}
-                                                className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg py-2 px-3 text-sm font-bold outline-none"
+                                            <button
+                                                onClick={() => openFeatModal({ type: 'asi', level: lvl })}
+                                                className="w-full text-left p-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 hover:border-primary/50 transition-all flex justify-between items-center"
                                             >
-                                                <option value="" disabled>Selecciona una dote...</option>
-                                                {FEAT_OPTIONS.map(f => (
-                                                    <option key={f.name} value={f.name}>{f.name}</option>
-                                                ))}
-                                            </select>
+                                                <span className={`font-bold ${decision.feat ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+                                                    {decision.feat || 'Seleccionar Dote...'}
+                                                </span>
+                                                <span className="material-symbols-outlined text-slate-400">chevron_right</span>
+                                            </button>
                                             {decision.feat && (
                                                 <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 p-2 rounded-lg">
                                                     {FEAT_OPTIONS.find(f => f.name === decision.feat)?.description}
@@ -1243,15 +1267,15 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                 {selectedSpecies === 'Human' && (
                     <div>
                         <h3 className="text-xl font-bold mb-3">Hazaña de Humano</h3>
-                         <select 
-                            value={selectedFeat}
-                            onChange={(e) => setSelectedFeat(e.target.value)}
-                            className="w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-primary/50"
+                         <button
+                            onClick={() => openFeatModal({ type: 'human' })}
+                            className="w-full text-left p-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 hover:border-primary/50 transition-all flex justify-between items-center"
                         >
-                            {FEAT_OPTIONS.map(f => (
-                                <option key={f.name} value={f.name}>{f.name}</option>
-                            ))}
-                        </select>
+                            <span className={`font-bold ${selectedFeat ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+                                {selectedFeat || 'Seleccionar Dote...'}
+                            </span>
+                            <span className="material-symbols-outlined text-slate-400">chevron_right</span>
+                        </button>
                         <p className="mt-2 text-xs text-slate-500 dark:text-slate-300 p-3 bg-slate-200 dark:bg-white/5 rounded-lg border border-transparent dark:border-white/5">
                             {FEAT_OPTIONS.find(f => f.name === selectedFeat)?.description}
                         </p>
@@ -1450,6 +1474,69 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                 Continuar
             </button>
         </div>
+      )}
+
+      {/* Feat Selection Modal */}
+      {showFeatModal && (
+          <div className="fixed inset-0 z-50 bg-background-light dark:bg-background-dark flex flex-col animate-fadeIn">
+              <div className="flex flex-col border-b border-slate-200 dark:border-white/10 bg-white dark:bg-surface-dark">
+                  <div className="flex items-center gap-4 p-4">
+                      <button onClick={() => setShowFeatModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                          <span className="material-symbols-outlined text-slate-900 dark:text-white">close</span>
+                      </button>
+                      <div className="flex-1 relative">
+                          <input 
+                              type="text" 
+                              placeholder="Buscar dote..." 
+                              value={featSearchQuery} 
+                              onChange={(e) => setFeatSearchQuery(e.target.value)} 
+                              autoFocus
+                              className="w-full bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-xl py-2 pl-10 pr-4 text-slate-900 dark:text-white placeholder:text-slate-500 outline-none focus:border-primary/50"
+                          />
+                          <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-500">search</span>
+                      </div>
+                  </div>
+                  <h3 className="px-4 pb-3 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      Selecciona una Dote
+                  </h3>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {FEAT_OPTIONS
+                      .filter(f => f.name.toLowerCase().includes(featSearchQuery.toLowerCase()))
+                      .map(feat => {
+                          let isSelected = false;
+                          if (featModalContext?.type === 'human') {
+                              isSelected = selectedFeat === feat.name;
+                          } else if (featModalContext?.type === 'asi' && featModalContext.level) {
+                              isSelected = asiDecisions[featModalContext.level]?.feat === feat.name;
+                          }
+
+                          return (
+                              <button 
+                                  key={feat.name} 
+                                  onClick={() => handleFeatSelect(feat.name)}
+                                  className={`w-full text-left p-4 rounded-xl border transition-all ${isSelected ? 'bg-primary/10 border-primary/50' : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'}`}
+                              >
+                                  <div className="flex justify-between items-start mb-1">
+                                      <span className={`font-bold text-base ${isSelected ? 'text-primary' : 'text-slate-900 dark:text-white'}`}>{feat.name}</span>
+                                      {isSelected && <span className="material-symbols-outlined text-primary text-xl">check_circle</span>}
+                                  </div>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                                      {feat.description}
+                                  </p>
+                              </button>
+                          );
+                      })
+                  }
+                  {FEAT_OPTIONS.filter(f => f.name.toLowerCase().includes(featSearchQuery.toLowerCase())).length === 0 && (
+                      <div className="text-center py-10 text-slate-400">
+                          <span className="material-symbols-outlined text-4xl mb-2">search_off</span>
+                          <p className="text-sm">No se encontraron dotes.</p>
+                      </div>
+                  )}
+              </div>
+          </div>
       )}
     </div>
   );
