@@ -78,6 +78,14 @@ export const getSpellSummary = (description: string, school: string) => {
     };
 };
 
+export const getEffectiveCasterType = (character: Character): 'full' | 'half' | 'third' | 'pact' | 'none' => {
+    if (character.class === 'Warlock') return 'pact';
+    if (['Cleric', 'Druid', 'Bard', 'Sorcerer', 'Wizard'].includes(character.class)) return 'full';
+    if (['Paladin', 'Ranger'].includes(character.class)) return 'half';
+    if (['Eldritch Knight', 'Arcane Trickster'].includes(character.subclass || '')) return 'third';
+    return 'none';
+};
+
 export const getFinalStats = (character: Character): Record<string, number> => {
     const stats = { ...character.stats };
     // Class Capstones
