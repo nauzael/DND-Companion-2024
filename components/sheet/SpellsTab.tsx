@@ -10,6 +10,7 @@ interface SpellsTabProps {
     onUpdate: (char: Character) => void;
 }
 
+// ... (Helper functions and constants remain unchanged)
 // Standard 5e Spell Slot Progression (Full Caster)
 const FULL_CASTER_SLOTS: number[][] = [
     [], // Lvl 0
@@ -433,7 +434,7 @@ const SpellsTab: React.FC<SpellsTabProps> = ({ character, onUpdate }) => {
        </div>
 
        {showGrimoire && createPortal(
-           <div className="fixed inset-0 z-50 bg-background-dark flex flex-col animate-fadeIn">
+           <div className="fixed inset-0 z-50 bg-background-dark flex flex-col animate-fadeIn pt-[env(safe-area-inset-top)]">
                <div className="flex flex-col border-b border-white/10 bg-surface-dark">
                    <div className="flex items-center gap-4 p-4 pb-2">
                        <button onClick={() => setShowGrimoire(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white"><span className="material-symbols-outlined">close</span></button>
@@ -538,8 +539,8 @@ const SpellsTab: React.FC<SpellsTabProps> = ({ character, onUpdate }) => {
            document.body
        )}
 
-       {selectedSpellName && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setSelectedSpellName(null)}>
+       {selectedSpellName && createPortal(
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setSelectedSpellName(null)}>
                 <div className="w-full max-w-sm bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-2xl transform transition-all scale-100 flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
                     {(() => {
                         const spell = SPELL_DETAILS[selectedSpellName];
@@ -597,7 +598,8 @@ const SpellsTab: React.FC<SpellsTabProps> = ({ character, onUpdate }) => {
                         );
                     })()}
                 </div>
-            </div>
+            </div>,
+            document.body
         )}
     </div>
   );

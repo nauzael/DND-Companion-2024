@@ -17,8 +17,8 @@ const CharacterList: React.FC<CharacterListProps> = ({ characters, onCreate, onS
 
   return (
     <div className="flex flex-col h-full min-h-screen pb-24 relative">
-      {/* Header */}
-      <header className="sticky top-0 z-20 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-black/5 dark:border-white/5">
+      {/* Header with Safe Area Padding */}
+      <header className="sticky top-0 z-20 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-black/5 dark:border-white/5 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center justify-between p-4">
           <div className="w-10"></div> {/* Spacer */}
           <div className="text-center">
@@ -133,7 +133,7 @@ const CharacterList: React.FC<CharacterListProps> = ({ characters, onCreate, onS
       </main>
 
       {/* Floating Action Button */}
-      <div className="fixed bottom-8 right-6 z-30">
+      <div className="fixed bottom-8 right-6 z-30 mb-[env(safe-area-inset-bottom)]">
         <button 
             onClick={onCreate}
             className="group flex items-center justify-center gap-2 h-14 pl-4 pr-6 bg-primary text-background-dark rounded-full shadow-[0_8px_30px_rgb(53,158,255,0.4)] hover:scale-105 hover:bg-white hover:text-background-dark transition-all duration-300"

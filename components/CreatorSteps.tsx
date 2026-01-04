@@ -25,6 +25,8 @@ interface CreatorStepsProps {
   onFinish: (char: Character) => void;
 }
 
+// ... (Rest of imports and helpers remain same until CreatorSteps component)
+
 const POINT_BUY_COSTS: Record<number, number> = {
   8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9
 };
@@ -133,10 +135,9 @@ const ClassProgressionList = ({ selectedClass, subclassData, currentLevel }: { s
 };
 
 const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
+  // ... (State definitions remain identical)
   const [step, setStep] = useState<CreatorStep>(1);
   const mainRef = useRef<HTMLDivElement>(null);
-  
-  // Character State
   const [name, setName] = useState('');
   const [charImage, setCharImage] = useState(DEFAULT_CHAR_IMAGE);
   const [level, setLevel] = useState<number>(1);
@@ -151,32 +152,27 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedHumanSkill, setSelectedHumanSkill] = useState<string>('');
   
-  // Stats & HP State
   const [statMethod, setStatMethod] = useState<'pointBuy' | 'standard' | 'manual'>('pointBuy');
   const [baseStats, setBaseStats] = useState<Record<Ability, number>>({ STR: 8, DEX: 8, CON: 8, INT: 8, WIS: 8, CHA: 8 });
   const [hpMethod, setHpMethod] = useState<'average' | 'manual'>('average');
   const [manualRolledHP, setManualRolledHP] = useState<number>(0);
   
-  // Background ASI Configuration
-  const [bgAsiMode, setBgAsiMode] = useState<'three' | 'two'>('three'); // 'three' (+1/+1/+1) or 'two' (+2/+1)
+  const [bgAsiMode, setBgAsiMode] = useState<'three' | 'two'>('three');
   const [bgPlus2, setBgPlus2] = useState<Ability>('STR');
   const [bgPlus1, setBgPlus1] = useState<Ability>('DEX');
 
-  // ASI Decisions State (Level -> Decision)
   const [asiDecisions, setAsiDecisions] = useState<Record<number, AsiDecision>>({});
 
-  // Feat Selection Modal State
   const [showFeatModal, setShowFeatModal] = useState(false);
   const [featModalContext, setFeatModalContext] = useState<{ type: 'human' | 'asi', level?: number } | null>(null);
   const [featSearchQuery, setFeatSearchQuery] = useState('');
 
-  // Generate a random trinket once per session/reset to avoid memory churn on re-renders
   const [trinket] = useState<string>(() => {
       const randomIndex = Math.floor(Math.random() * TRINKETS.length);
       return `Trinket: ${TRINKETS[randomIndex]}`;
   });
 
-  // Derived Data
+  // ... (Hooks and calculations remain identical)
   const speciesData = SPECIES_DETAILS[selectedSpecies];
   const classData = CLASS_DETAILS[selectedClass];
   const backgroundData = BACKGROUNDS_DATA[selectedBackground];
@@ -184,7 +180,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   const availableSubclasses = useMemo(() => SUBCLASS_OPTIONS[selectedClass] || [], [selectedClass]);
   const selectedSubclassData = useMemo(() => availableSubclasses.find(s => s.name === selectedSubclass), [availableSubclasses, selectedSubclass]);
 
-  // Identify Levels with ASI
   const asiLevels = useMemo(() => {
       const levels: number[] = [];
       const progression = CLASS_PROGRESSION[selectedClass] || {};
@@ -196,24 +191,18 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
       return levels;
   }, [selectedClass, level]);
 
-  // Calculate Final Stats (Base + Background Bonuses + ASIs)
   const finalStats = useMemo(() => {
     const stats = { ...baseStats };
-    
-    // Background Bonuses
     if (backgroundData?.scores) {
         if (bgAsiMode === 'three') {
              backgroundData.scores.forEach(ability => {
                 stats[ability] = Math.min(20, stats[ability] + 1);
             });
         } else {
-             // +2 to one, +1 to another
              if (bgPlus2) stats[bgPlus2] = Math.min(20, stats[bgPlus2] + 2);
              if (bgPlus1) stats[bgPlus1] = Math.min(20, stats[bgPlus1] + 1);
         }
     }
-
-    // Apply ASIs
     asiLevels.forEach(lvl => {
         const decision = asiDecisions[lvl];
         if (decision?.type === 'stat') {
@@ -221,20 +210,16 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
             if (decision.stat2) stats[decision.stat2] = Math.min(20, stats[decision.stat2] + 1);
         }
     });
-
     return stats;
   }, [baseStats, backgroundData, bgAsiMode, bgPlus2, bgPlus1, asiLevels, asiDecisions]);
 
-  // Point Buy Logic
   const usedPoints = useMemo(() => {
     return Object.values(baseStats).reduce((acc: number, val) => acc + (POINT_BUY_COSTS[val as number] || 0), 0);
   }, [baseStats]);
   
   const remainingPoints = 27 - usedPoints;
 
-  // Effects
   useEffect(() => {
-    // Scroll to top whenever step changes
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (mainRef.current) {
         mainRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -245,33 +230,28 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     if (speciesData?.name === 'Human') {
         if (!selectedFeat) setSelectedFeat(FEAT_OPTIONS[0].name);
     } else {
-        // Reset human specific choices if switching away
         setSelectedHumanSkill('');
     }
   }, [selectedSpecies, speciesData, selectedFeat]);
 
-  // Reset skills/subclass/ASIs when class changes
   useEffect(() => {
     setSelectedSkills([]);
     setSelectedSubclass('');
     setAsiDecisions({});
   }, [selectedClass]);
 
-  // Reset HP input when class changes
   useEffect(() => {
       setManualRolledHP(0);
   }, [selectedClass]);
 
-  // Reset Background ASI defaults when background changes
   useEffect(() => {
     if (backgroundData?.scores && backgroundData.scores.length >= 2) {
         setBgPlus2(backgroundData.scores[0]);
         setBgPlus1(backgroundData.scores[1]);
-        setBgAsiMode('three'); // Default back to flat mode
+        setBgAsiMode('three');
     }
   }, [selectedBackground, backgroundData]);
 
-  // Auto-select first subclass if level >= 3 and none selected
   useEffect(() => {
     if (level >= 3 && !selectedSubclass && availableSubclasses.length > 0) {
         setSelectedSubclass(availableSubclasses[0].name);
@@ -280,7 +260,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     }
   }, [level, availableSubclasses, selectedSubclass]);
 
-  // Reset stats to safe defaults when method changes
   useEffect(() => {
     if (statMethod === 'pointBuy') {
         setBaseStats({ STR: 8, DEX: 8, CON: 8, INT: 8, WIS: 8, CHA: 8 });
@@ -306,10 +285,8 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
         const currentVal = baseStats[stat];
         const newVal = currentVal + delta;
         if (newVal < 8 || newVal > 15) return;
-        
         const costDiff = (POINT_BUY_COSTS[newVal] - POINT_BUY_COSTS[currentVal]);
         if (remainingPoints - costDiff < 0) return;
-
         setBaseStats(prev => ({ ...prev, [stat]: newVal }));
     } else {
         setBaseStats(prev => ({ ...prev, [stat]: Math.max(1, Math.min(20, prev[stat] + delta)) }));
@@ -347,14 +324,11 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     return true;
   };
 
-  // AC Calculation including Unarmored Defense and features
   const calculateAC = () => {
     const dexMod = Math.floor((finalStats.DEX - 10) / 2);
     const conMod = Math.floor((finalStats.CON - 10) / 2);
     const wisMod = Math.floor((finalStats.WIS - 10) / 2);
-    
     let ac = 10 + dexMod;
-
     if (selectedClass === 'Barbarian') {
         ac = 10 + dexMod + conMod;
     } else if (selectedClass === 'Monk') {
@@ -362,55 +336,31 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     } else if (selectedClass === 'Sorcerer' && selectedSubclass === 'Draconic Sorcery') {
         ac = 13 + dexMod;
     }
-    
     return ac;
   };
 
-  // HP Calculation
   const calculateMaxHP = () => {
     const conMod = Math.floor((finalStats.CON - 10) / 2);
     const hitDie = HIT_DIE[selectedClass] || 8;
-    
     let baseHp = 0;
-    
-    // Level 1: Max Die + CON
     baseHp += hitDie + conMod;
-
-    // Subsequent Levels
     if (level > 1) {
         if (hpMethod === 'average') {
             const avg = Math.floor(hitDie / 2) + 1;
             baseHp += (avg + conMod) * (level - 1);
         } else {
-            // Manual: User inputs total rolled value for levels 2+, we add CON per level
             baseHp += manualRolledHP + (conMod * (level - 1));
         }
     }
-
-    // Bonuses
     let bonusTotal = 0;
-
-    // Dwarf Trait: Dwarven Toughness
-    if (selectedSpecies === 'Dwarf') {
-        bonusTotal += level; // +1 per level
-    }
-
-    // Sorcerer Subclass: Draconic Resilience
-    if (selectedClass === 'Sorcerer' && selectedSubclass === 'Draconic Sorcery') {
-        bonusTotal += level; // +1 per level
-    }
-
-    // Feat: Tough (from Background, Human, or ASIs)
+    if (selectedSpecies === 'Dwarf') bonusTotal += level;
+    if (selectedClass === 'Sorcerer' && selectedSubclass === 'Draconic Sorcery') bonusTotal += level;
     const allFeats = [
         backgroundData?.feat, 
         speciesData?.name === 'Human' ? selectedFeat : undefined,
         ...asiLevels.map(l => asiDecisions[l]?.type === 'feat' ? asiDecisions[l]?.feat : undefined)
     ].filter(Boolean);
-
-    if (allFeats.includes('Tough')) {
-        bonusTotal += (level * 2);
-    }
-
+    if (allFeats.includes('Tough')) bonusTotal += (level * 2);
     return Math.max(1, baseHp + bonusTotal);
   };
 
@@ -461,11 +411,8 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     );
   };
 
-  // Speed Calculation
   const calculateSpeed = () => {
     let speed = speciesData?.speed || 30;
-
-    // Monk Unarmored Movement (Level 2+)
     if (selectedClass === 'Monk' && level >= 2) {
         if (level >= 18) speed += 30;
         else if (level >= 14) speed += 25;
@@ -473,42 +420,28 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
         else if (level >= 6) speed += 15;
         else speed += 10;
     }
-
-    // Barbarian Fast Movement (Level 5+)
-    if (selectedClass === 'Barbarian' && level >= 5) {
-        speed += 10;
-    }
-    
-    // Feats: Mobile / Speedy
+    if (selectedClass === 'Barbarian' && level >= 5) speed += 10;
     const allFeats = [
         backgroundData?.feat, 
         speciesData?.name === 'Human' ? selectedFeat : undefined,
         ...asiLevels.map(l => asiDecisions[l]?.type === 'feat' ? asiDecisions[l]?.feat : undefined)
     ].filter(Boolean);
-
-    if (allFeats.some(f => f === 'Mobile' || f === 'Speedy')) {
-        speed += 10;
-    }
-
+    if (allFeats.some(f => f === 'Mobile' || f === 'Speedy')) speed += 10;
     return speed;
   };
 
-  // Identify active passives for display
   const getActivePassives = () => {
       const passives: string[] = [];
       if (selectedClass === 'Barbarian') passives.push('Unarmored Defense (CON)');
       if (selectedClass === 'Monk') passives.push('Unarmored Defense (WIS)');
       if (selectedClass === 'Sorcerer' && selectedSubclass === 'Draconic Sorcery') passives.push('Draconic Resilience (AC 13+DEX, +1 HP/lvl)');
       if (selectedSpecies === 'Dwarf') passives.push('Dwarven Toughness (+1 HP/lvl)');
-      
       const feats = [
           backgroundData?.feat, 
           speciesData?.name === 'Human' ? selectedFeat : undefined,
           ...asiLevels.map(l => asiDecisions[l]?.type === 'feat' ? asiDecisions[l]?.feat : undefined)
       ].filter(Boolean);
-      
       if (feats.includes('Tough')) passives.push('Tough Feat (+2 HP/lvl)');
-
       return passives;
   };
 
@@ -516,7 +449,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     if (!canProceed()) return;
     if (step < 5) setStep((s) => (s + 1) as CreatorStep);
     else {
-        // Construct the new character object only when finishing
         const newCharacter: Character = {
             id: `c-${Date.now()}`,
             name: name || 'Heroe',
@@ -540,7 +472,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                 ...asiLevels.map(l => asiDecisions[l]?.type === 'feat' ? asiDecisions[l]?.feat : undefined)
             ].filter((f): f is string => !!f),
             inventory: [trinket, ...(backgroundData?.equipment || [])].map((itemStr, i) => {
-              // Parse quantity from string like "Dagger (2)"
               const match = itemStr.match(/^(.*?) \((\d+)\)$/);
               return {
                 id: `init-item-${i}`,
@@ -550,7 +481,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
               };
             }),
             imageUrl: charImage,
-            notes: [] // Initialize notes as empty array
+            notes: []
         };
         onFinish(newCharacter);
     }
@@ -561,7 +492,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     else onBack();
   };
 
-  // ... (rest of the component remains unchanged)
   const renderProgressBar = () => (
     <div className="px-6 pb-2">
       <div className="flex w-full flex-row items-center justify-between gap-2">
@@ -576,7 +506,8 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
   return (
     <div className="flex flex-col h-full min-h-screen relative bg-background-light dark:bg-background-dark">
-      <header className="flex items-center justify-between p-4 pt-6 z-10 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm sticky top-0">
+      {/* Header with Safe Area Padding */}
+      <header className="flex items-center justify-between p-4 pt-[calc(1.5rem+env(safe-area-inset-top))] z-10 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm sticky top-0">
         <button onClick={prevStep} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
           <span className="material-symbols-outlined text-2xl">arrow_back</span>
         </button>
@@ -591,7 +522,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
       <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar pb-5">
         {step === 1 && (
-            // ... (Content of Step 1 same as before)
+            // ... (Step 1 Content - No changes needed)
             <>
                 <div className="px-6 pt-3 pb-1">
                     <h1 className="text-3xl font-bold leading-tight tracking-tight text-slate-900 dark:text-white">
@@ -994,7 +925,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
             </>
         )}
 
-        {/* ... (Step 2, 3, 4 remain unchanged) ... */}
+        {/* ... (Step 2, 3, 4, 5 content blocks remain unchanged) ... */}
         {step === 2 && (
             <div className="px-6 py-4 space-y-6">
                 
@@ -1506,7 +1437,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
       </main>
 
       {step < 5 && (
-        <div className="px-4 py-3 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-background-dark sticky bottom-0 z-20">
+        <div className="px-4 py-3 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-background-dark sticky bottom-0 z-20 mb-[env(safe-area-inset-bottom)]">
             <button 
                 onClick={nextStep}
                 disabled={!canProceed()}
@@ -1519,7 +1450,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
       {/* Feat Selection Modal */}
       {showFeatModal && (
-          <div className="fixed inset-0 z-50 bg-background-light dark:bg-background-dark flex flex-col animate-fadeIn">
+          <div className="fixed inset-0 z-50 bg-background-light dark:bg-background-dark flex flex-col animate-fadeIn pt-[env(safe-area-inset-top)]">
               <div className="flex flex-col border-b border-slate-200 dark:border-white/10 bg-white dark:bg-surface-dark">
                   <div className="flex items-center gap-4 p-4">
                       <button onClick={() => setShowFeatModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
@@ -1542,7 +1473,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                   </h3>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-[env(safe-area-inset-bottom)]">
                   {FEAT_OPTIONS
                       .filter(f => f.name.toLowerCase().includes(featSearchQuery.toLowerCase()))
                       .map(feat => {
