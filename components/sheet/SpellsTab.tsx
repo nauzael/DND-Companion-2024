@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Character } from '../../types';
 import { SPELL_DETAILS, SPELL_LIST_BY_CLASS, CANTRIPS_KNOWN_BY_LEVEL, SPELLS_KNOWN_BY_LEVEL, MAX_SPELL_LEVEL, SPELLCASTING_ABILITY } from '../../Data/spells';
 import { SCHOOL_THEMES, getSpellSummary, formatShort, formatModifier, getFinalStats } from '../../utils/sheetUtils';
@@ -431,7 +432,7 @@ const SpellsTab: React.FC<SpellsTabProps> = ({ character, onUpdate }) => {
             </button>
        </div>
 
-       {showGrimoire && (
+       {showGrimoire && createPortal(
            <div className="fixed inset-0 z-50 bg-background-dark flex flex-col animate-fadeIn">
                <div className="flex flex-col border-b border-white/10 bg-surface-dark">
                    <div className="flex items-center gap-4 p-4 pb-2">
@@ -472,7 +473,7 @@ const SpellsTab: React.FC<SpellsTabProps> = ({ character, onUpdate }) => {
                    </div>
                )}
 
-               <div className="flex-1 overflow-y-auto p-4 gap-2 flex flex-col">
+               <div className="flex-1 overflow-y-auto p-4 pb-24 gap-2 flex flex-col">
                    {grimoireSpellList
                        .filter(name => {
                            const s = SPELL_DETAILS[name];
@@ -533,7 +534,8 @@ const SpellsTab: React.FC<SpellsTabProps> = ({ character, onUpdate }) => {
                        })
                    }
                </div>
-           </div>
+           </div>,
+           document.body
        )}
 
        {selectedSpellName && (
