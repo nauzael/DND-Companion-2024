@@ -283,7 +283,7 @@ const SpellsTab: React.FC<SpellsTabProps> = ({ character, onUpdate }) => {
     const slotCount = getSlots(effectiveCasterType, character.level, activeSpellLevel);
 
     return (
-    <div className="flex flex-col gap-6 px-4 pb-24 relative min-h-screen">
+    <div className="flex flex-col gap-6 px-4 pb-20 relative min-h-screen">
        <div className="grid grid-cols-3 gap-3 mt-4">
            <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-surface-dark border border-white/5 shadow-sm">
               <span className="text-primary text-2xl font-bold leading-none">{formatModifier(spellMod)}</span>

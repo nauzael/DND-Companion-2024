@@ -43,7 +43,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
         <div className="w-10"></div> {/* Spacer */}
       </div>
 
-      <main className="flex-1 overflow-y-auto no-scrollbar relative pb-28">
+      <main className="flex-1 overflow-y-auto no-scrollbar relative">
         {activeTab === 'combat' && <CombatTab character={character} onUpdate={onUpdate} />}
         {activeTab === 'inventory' && <InventoryTab character={character} onUpdate={onUpdate} />}
         {activeTab === 'spells' && <SpellsTab character={character} onUpdate={onUpdate} />}

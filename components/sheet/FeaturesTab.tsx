@@ -58,7 +58,7 @@ const FeaturesTab: React.FC<FeaturesTabProps> = ({ character }) => {
     const iconMap: Record<string, string> = { 'Clase': 'shield', 'Subclase': 'auto_awesome', 'Raza': 'face', 'Dote': 'military_tech' };
 
     return (
-        <div className="px-4 pb-24 flex flex-col gap-3 mt-4">
+        <div className="px-4 pb-20 flex flex-col gap-3 mt-4">
             {features.map((feat, idx) => {
                 const icon = iconMap[feat.source] || 'stars';
                 return (

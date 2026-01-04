@@ -103,8 +103,8 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ character, onUpdate }) => {
     };
 
     return (
-    <div className="flex flex-col gap-5 px-4 pb-24">
-       <div className="pt-4 shrink-0">
+    <div className="flex flex-col gap-5 px-4 pb-20">
+       <div className="pt-4 shrink-0 flex flex-col gap-4">
            <div className="flex flex-col gap-2">
               <div className="flex justify-between items-end">
                  <label className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">Encumbrance</label>
@@ -114,14 +114,24 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ character, onUpdate }) => {
                  <div className={`h-full rounded-full ${totalWeight > carryCap ? 'bg-red-500' : 'bg-primary'}`} style={{ width: `${Math.min(100, (totalWeight / carryCap) * 100)}%` }}></div>
               </div>
            </div>
+
+           <button 
+                onClick={() => setShowAddItem(true)} 
+                className="flex items-center justify-center gap-2 w-full py-3 bg-surface-light dark:bg-white/5 border border-dashed border-slate-300 dark:border-white/10 rounded-xl text-primary font-bold hover:bg-primary/5 dark:hover:bg-white/10 transition-colors"
+           >
+               <span className="material-symbols-outlined text-lg">add_circle</span>
+               <span>Add Item</span>
+           </button>
        </div>
+
        {equippedItems.length > 0 && (<div className="flex flex-col gap-3"><h3 className="text-slate-400 dark:text-slate-400 text-xs font-bold uppercase tracking-wider pl-1">Equipamiento ({equippedItems.length})</h3>{equippedItems.map(renderItemRow)}</div>)}
+       
        <div className="flex flex-col gap-3">
            <h3 className="text-slate-400 dark:text-slate-400 text-xs font-bold uppercase tracking-wider pl-1">Mochila ({backpackItems.length})</h3>
            {backpackItems.length === 0 && (<div className="p-4 text-center border border-dashed border-slate-200 dark:border-white/5 rounded-xl"><p className="text-sm text-slate-400 italic">La mochila está vacía.</p></div>)}
            {backpackItems.map(renderItemRow)}
        </div>
-       <div className="flex justify-between items-center mb-3 mt-2"><h3 className="text-slate-400 dark:text-slate-400 text-xs font-bold uppercase tracking-wider pl-1"></h3><button onClick={() => setShowAddItem(true)} className="text-primary text-sm font-bold flex items-center gap-1"><span className="material-symbols-outlined text-lg">add_circle</span> Add Item</button></div>
+
        {showAddItem && (
            <div className="absolute inset-0 z-50 bg-background-light dark:bg-background-dark flex flex-col p-4 animate-fadeIn">
                <div className="flex items-center gap-3 mb-4">
