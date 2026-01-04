@@ -67,6 +67,64 @@ const App: React.FC = () => {
     setCharacters(prev => prev.map(c => c.id === updatedChar.id ? updatedChar : c));
   };
 
+  // Export Logic
+  const handleExportCharacters = () => {
+    // Use Blob to handle larger data and special characters correctly
+    const blob = new Blob([JSON.stringify(characters, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", url);
+    downloadAnchorNode.setAttribute("download", `dnd_characters_${new Date().toISOString().slice(0,10)}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  // Import Logic
+  const handleImportCharacters = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileInput = e.target;
+    const file = fileInput.files?.[0];
+
+    if (file) {
+      const fileReader = new FileReader();
+      fileReader.readAsText(file, "UTF-8");
+      
+      fileReader.onload = event => {
+        try {
+          if (!event.target?.result) return;
+          const parsed = JSON.parse(event.target.result as string);
+          
+          if (Array.isArray(parsed) && parsed.every(c => c.name && c.class)) {
+             // Logic flow: Merge first, if canceled, ask to replace
+             if (window.confirm(`Se encontraron ${parsed.length} personajes.\n\n[Aceptar] FUSIONAR con tu lista actual (recomendado)\n[Cancelar] Ver opción de reemplazar`)) {
+                 // Merge: Generate new IDs to prevent collisions
+                 const newChars = parsed.map(c => ({
+                     ...c, 
+                     id: `imp-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+                 }));
+                 setCharacters(prev => [...prev, ...newChars]);
+             } else {
+                 // Replace
+                 if (window.confirm("⚠️ OPCIÓN DESTRUCTIVA\n\n¿Quieres BORRAR tu lista actual y reemplazarla completamente con este archivo?")) {
+                     setCharacters(parsed);
+                 }
+             }
+          } else {
+              alert("El archivo seleccionado no tiene el formato correcto de personajes.");
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Error al leer el archivo. Asegúrate de que es un JSON válido.");
+        } finally {
+            // Reset input so the same file can be selected again if needed
+            fileInput.value = '';
+        }
+      };
+    }
+  };
+
   return (
     <div className="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-white min-h-screen">
       <div className="mx-auto max-w-md bg-background-light dark:bg-background-dark shadow-2xl min-h-screen relative overflow-hidden">
@@ -76,6 +134,8 @@ const App: React.FC = () => {
             onCreate={handleCreateNew} 
             onSelect={handleSelectCharacter}
             onDelete={handleDeleteCharacter}
+            onExport={handleExportCharacters}
+            onImport={handleImportCharacters}
           />
         )}
         {view === 'create' && (

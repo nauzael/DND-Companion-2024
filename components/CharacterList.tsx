@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { Character } from '../types';
 
 interface CharacterListProps {
@@ -7,20 +7,65 @@ interface CharacterListProps {
   onCreate: () => void;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
+  onExport: () => void;
+  onImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-const CharacterList: React.FC<CharacterListProps> = ({ characters, onCreate, onSelect, onDelete }) => {
+const CharacterList: React.FC<CharacterListProps> = ({ characters, onCreate, onSelect, onDelete, onExport, onImport }) => {
+  const [showMenu, setShowMenu] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   return (
     <div className="flex flex-col h-full min-h-screen pb-24 relative">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-black/5 dark:border-white/5">
-        <div className="flex items-center justify-center p-4">
+        <div className="flex items-center justify-between p-4">
+          <div className="w-10"></div> {/* Spacer */}
           <div className="text-center">
             <h2 className="text-2xl font-bold leading-tight tracking-tight">Personajes</h2>
             <p className="text-xs font-medium text-slate-500 dark:text-primary/80 mt-0.5">D&D 2024 Edition</p>
           </div>
+          <div className="w-10 flex justify-end relative">
+            <button 
+                onClick={() => setShowMenu(!showMenu)}
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+            >
+                <span className="material-symbols-outlined text-slate-600 dark:text-slate-300">settings</span>
+            </button>
+            
+            {showMenu && (
+                <>
+                    <div className="fixed inset-0 z-30" onClick={() => setShowMenu(false)}></div>
+                    <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-surface-dark rounded-xl shadow-xl border border-slate-200 dark:border-white/10 overflow-hidden z-40 animate-fadeIn">
+                        <button 
+                            onClick={() => { onExport(); setShowMenu(false); }} 
+                            className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-slate-200 border-b border-slate-100 dark:border-white/5"
+                        >
+                            <span className="material-symbols-outlined text-lg text-primary">download</span> 
+                            Exportar Datos
+                        </button>
+                        <button 
+                            onClick={() => { fileInputRef.current?.click(); setShowMenu(false); }} 
+                            className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-slate-200"
+                        >
+                            <span className="material-symbols-outlined text-lg text-green-500">upload</span> 
+                            Importar Datos
+                        </button>
+                    </div>
+                </>
+            )}
+          </div>
         </div>
       </header>
+
+      {/* Hidden Input for Import */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={onImport} 
+        className="hidden" 
+        accept=".json" 
+      />
 
       {/* Main Content */}
       <main className="flex-1 px-4 py-4 flex flex-col gap-4">
