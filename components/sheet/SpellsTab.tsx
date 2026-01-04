@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Character } from '../../types';
 import { SPELL_DETAILS, SPELL_LIST_BY_CLASS, CANTRIPS_KNOWN_BY_LEVEL, SPELLS_KNOWN_BY_LEVEL, MAX_SPELL_LEVEL, SPELLCASTING_ABILITY } from '../../Data/spells';
 import { SCHOOL_THEMES, getSpellSummary, formatShort, formatModifier, getFinalStats } from '../../utils/sheetUtils';
@@ -96,6 +96,25 @@ const SpellsTab: React.FC<SpellsTabProps> = ({ character, onUpdate }) => {
     const [expandedGrimoireId, setExpandedGrimoireId] = useState<string | null>(null);
     const [selectedSpellName, setSelectedSpellName] = useState<string | null>(null);
     const [usedSlots, setUsedSlots] = useState<Record<string, boolean>>({});
+
+    // Auto-scroll to centered tab
+    useEffect(() => {
+        const el = document.getElementById(`spell-level-btn-${activeSpellLevel}`);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }, [activeSpellLevel]);
+
+    useEffect(() => {
+        if (showGrimoire) {
+            setTimeout(() => {
+                const el = document.getElementById(`grimoire-level-btn-${grimoireLevel}`);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }
+            }, 100);
+        }
+    }, [showGrimoire, grimoireLevel]);
 
     // Magic Initiate Detection
     const magicInitiateType = useMemo(() => {
@@ -316,6 +335,7 @@ const SpellsTab: React.FC<SpellsTabProps> = ({ character, onUpdate }) => {
        <div className="flex overflow-x-auto gap-2 no-scrollbar py-1">
            {maxCantrips > 0 && (
                <button 
+                   id="spell-level-btn-0"
                    onClick={() => setActiveSpellLevel(0)}
                    className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all ${activeSpellLevel === 0 ? 'bg-primary text-background-dark' : 'bg-surface-dark text-slate-500 hover:text-white border border-white/5'}`}
                >
@@ -326,6 +346,7 @@ const SpellsTab: React.FC<SpellsTabProps> = ({ character, onUpdate }) => {
                return (
                    <button 
                        key={lvl}
+                       id={`spell-level-btn-${lvl}`}
                        onClick={() => setActiveSpellLevel(lvl)}
                        className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all ${activeSpellLevel === lvl ? 'bg-primary text-background-dark' : 'bg-surface-dark text-slate-500 hover:text-white border border-white/5'}`}
                    >
@@ -430,10 +451,10 @@ const SpellsTab: React.FC<SpellsTabProps> = ({ character, onUpdate }) => {
 
                <div className="flex overflow-x-auto gap-2 p-2 border-b border-white/5 no-scrollbar bg-surface-dark">
                    {maxCantrips > 0 && (
-                       <button onClick={() => setGrimoireLevel(0)} className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors ${grimoireLevel === 0 ? 'bg-white text-background-dark' : 'bg-white/5 text-slate-400'}`}>Cantrips</button>
+                       <button id="grimoire-level-btn-0" onClick={() => setGrimoireLevel(0)} className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors ${grimoireLevel === 0 ? 'bg-white text-background-dark' : 'bg-white/5 text-slate-400'}`}>Cantrips</button>
                    )}
                    {Array.from({length: maxSpellLevel}, (_, i) => i + 1).map(lvl => (
-                       <button key={lvl} onClick={() => setGrimoireLevel(lvl)} className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors ${grimoireLevel === lvl ? 'bg-white text-background-dark' : 'bg-white/5 text-slate-400'}`}>Lvl {lvl}</button>
+                       <button key={lvl} id={`grimoire-level-btn-${lvl}`} onClick={() => setGrimoireLevel(lvl)} className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors ${grimoireLevel === lvl ? 'bg-white text-background-dark' : 'bg-white/5 text-slate-400'}`}>Lvl {lvl}</button>
                    ))}
                </div>
 
