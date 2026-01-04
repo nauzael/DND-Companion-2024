@@ -572,226 +572,6 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
       setHpModal({ ...hpModal, show: false });
   };
 
-  const renderSpells = () => {
-      const totalSlots = getSlots(effectiveCasterType, character.level, activeSpellLevel);
-      
-      const spellsAtLevel = (character.preparedSpells || []).filter(s => {
-          const det = SPELL_DETAILS[s];
-          return det && det.level === activeSpellLevel;
-      });
-
-      return (
-        <div className="flex flex-col h-full">
-            {/* Header / Slots */}
-            {activeSpellLevel > 0 && totalSlots > 0 && (
-                <div className="px-4 pt-4 pb-2">
-                    <div className="flex justify-between items-end mb-2">
-                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                            Espacios de Nivel {activeSpellLevel} {effectiveCasterType === 'pact' ? '(Pact)' : ''}
-                        </h3>
-                        <button onClick={() => {
-                             // Reset logic for specific level slots
-                             const newSlots = { ...usedSlots };
-                             for(let i=0; i<totalSlots; i++) delete newSlots[`${activeSpellLevel}-${i}`];
-                             setUsedSlots(newSlots);
-                        }} className="text-[10px] text-primary font-bold">
-                            Restaurar
-                        </button>
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                        {Array.from({ length: totalSlots }).map((_, i) => {
-                            const isUsed = usedSlots[`${activeSpellLevel}-${i}`];
-                            return (
-                                <button 
-                                    key={i}
-                                    onClick={() => toggleSlot(activeSpellLevel, i)}
-                                    className={`h-8 flex-1 rounded-lg border-2 transition-all ${isUsed ? 'bg-transparent border-slate-200 dark:border-white/10 text-slate-300' : 'bg-primary border-primary shadow-lg shadow-primary/30'}`}
-                                ></button>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-
-            {/* Level Selector */}
-            <div className="px-4 py-2 overflow-x-auto no-scrollbar">
-                <div className="flex gap-2">
-                    {Array.from({ length: maxSpellLevel + 1 }).map((_, i) => (
-                        <button
-                            key={i}
-                            onClick={() => setActiveSpellLevel(i)}
-                            className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${activeSpellLevel === i ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-white/5 text-slate-500 hover:bg-slate-200 dark:hover:bg-white/10'}`}
-                        >
-                            {i === 0 ? 'Trucos' : `Nivel ${i}`}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {/* Spells List */}
-            <div className="flex-1 px-4 py-2 space-y-3 pb-24">
-                {spellsAtLevel.length === 0 && (
-                    <div className="py-8 text-center border-2 border-dashed border-slate-200 dark:border-white/5 rounded-2xl">
-                        <p className="text-slate-400 text-sm">No hay hechizos preparados.</p>
-                    </div>
-                )}
-
-                {spellsAtLevel.map(spellName => {
-                    const spell = SPELL_DETAILS[spellName];
-                    if (!spell) return null;
-                    const summary = getSpellSummary(spell.description, spell.school);
-                    const isExpanded = expandedIds[spellName];
-
-                    return (
-                        <div key={spellName} className="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden">
-                            <div 
-                                onClick={() => toggleExpand(spellName)}
-                                className="p-3 flex items-center justify-between cursor-pointer active:bg-slate-50 dark:active:bg-white/5"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-lg ${summary.bg} ${summary.text} flex items-center justify-center border ${summary.border}`}>
-                                        <span className="material-symbols-outlined text-lg">{summary.icon}</span>
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{spell.name}</h4>
-                                        <div className="flex items-center gap-2 mt-0.5">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{formatShort(spell.castingTime)}</span>
-                                            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{formatShort(spell.range)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                {activeSpellLevel > 0 && (
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); castSpell(activeSpellLevel); }}
-                                        className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
-                                    >
-                                        <span className="material-symbols-outlined text-[18px]">bolt</span>
-                                    </button>
-                                )}
-                            </div>
-                            
-                            {isExpanded && (
-                                <div className="px-4 pb-4 pt-0">
-                                    <div className="my-2 h-px bg-slate-100 dark:bg-white/5"></div>
-                                    <div className="grid grid-cols-2 gap-2 mb-3">
-                                        <div className="bg-slate-50 dark:bg-white/5 p-2 rounded-lg">
-                                            <span className="text-[9px] uppercase text-slate-400 font-bold block">Duración</span>
-                                            <span className="text-xs font-medium dark:text-slate-300">{spell.duration}</span>
-                                        </div>
-                                        <div className="bg-slate-50 dark:bg-white/5 p-2 rounded-lg">
-                                            <span className="text-[9px] uppercase text-slate-400 font-bold block">Componentes</span>
-                                            <span className="text-xs font-medium dark:text-slate-300">{spell.components}</span>
-                                        </div>
-                                    </div>
-                                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">{spell.description}</p>
-                                    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-white/5 flex justify-end">
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); togglePreparedSpell(spellName); }}
-                                            className="text-xs font-bold text-red-500 flex items-center gap-1 hover:bg-red-50 dark:hover:bg-red-900/20 px-2 py-1 rounded"
-                                        >
-                                            <span className="material-symbols-outlined text-[14px]">remove_circle</span>
-                                            Despreparar
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-
-                <button 
-                    onClick={() => { setGrimoireLevel(activeSpellLevel); setGrimoireSearch(''); setShowGrimoire(true); }}
-                    className="w-full py-3 rounded-xl border-2 border-dashed border-slate-300 dark:border-white/10 text-slate-400 font-bold text-sm hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2"
-                >
-                    <span className="material-symbols-outlined">add_circle</span>
-                    Preparar Hechizo (Nivel {activeSpellLevel})
-                </button>
-            </div>
-
-            {/* Grimoire Modal */}
-            {showGrimoire && (
-                <div className="fixed inset-0 z-[60] bg-background-light dark:bg-background-dark flex flex-col animate-fadeIn">
-                    <div className="flex items-center gap-4 p-4 border-b border-slate-200 dark:border-white/5">
-                        <button onClick={() => setShowGrimoire(false)} className="w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 flex items-center justify-center">
-                            <span className="material-symbols-outlined">close</span>
-                        </button>
-                        <div className="flex-1 relative">
-                            <input 
-                                type="text" 
-                                placeholder="Buscar hechizo..."
-                                value={grimoireSearch}
-                                onChange={(e) => setGrimoireSearch(e.target.value)}
-                                autoFocus
-                                className="w-full bg-slate-100 dark:bg-white/5 border-none rounded-xl py-2 pl-10 pr-4 outline-none focus:ring-2 ring-primary/50 text-slate-900 dark:text-white"
-                            />
-                            <span className="material-symbols-outlined absolute left-3 top-2 text-slate-400">search</span>
-                        </div>
-                    </div>
-                    
-                    <div className="px-4 py-2 bg-slate-50 dark:bg-white/5 flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider">
-                        <span>Grimorio Nivel {grimoireLevel}</span>
-                        <span className={character.preparedSpells?.filter(s => SPELL_DETAILS[s]?.level === grimoireLevel).length >= (grimoireLevel === 0 ? maxCantrips : maxSpells) ? 'text-red-500' : 'text-primary'}>
-                            {grimoireLevel === 0 
-                                ? `${currentCantrips}/${maxCantrips} Trucos`
-                                : `${currentSpells}/${maxSpells} Preparados`
-                            }
-                        </span>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                        {grimoireSpellList
-                            .filter(name => {
-                                const s = SPELL_DETAILS[name];
-                                if (!s) return false;
-                                if (s.level !== grimoireLevel) return false;
-                                return name.toLowerCase().includes(grimoireSearch.toLowerCase());
-                            })
-                            .sort()
-                            .map(name => {
-                                const spell = SPELL_DETAILS[name];
-                                const isPrepared = character.preparedSpells?.includes(name);
-                                const isExpanded = expandedGrimoireId === name;
-                                const summary = getSpellSummary(spell.description, spell.school);
-
-                                return (
-                                    <div key={name} className={`bg-white dark:bg-surface-dark rounded-xl border ${isPrepared ? 'border-primary/50 shadow-[0_0_10px_rgba(53,158,255,0.15)]' : 'border-slate-200 dark:border-white/5'} overflow-hidden transition-all`}>
-                                        <div 
-                                            onClick={() => setExpandedGrimoireId(isExpanded ? null : name)}
-                                            className="p-3 flex items-center justify-between cursor-pointer"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-8 h-8 rounded-lg ${summary.bg} ${summary.text} flex items-center justify-center`}>
-                                                    <span className="material-symbols-outlined text-sm">{summary.icon}</span>
-                                                </div>
-                                                <span className={`font-bold text-sm ${isPrepared ? 'text-primary' : 'text-slate-900 dark:text-white'}`}>{name}</span>
-                                            </div>
-                                            <button 
-                                                onClick={(e) => { e.stopPropagation(); togglePreparedSpell(name); }}
-                                                className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all ${isPrepared ? 'bg-primary text-white border-primary' : 'bg-transparent border-slate-300 text-slate-300 hover:border-primary hover:text-primary'}`}
-                                            >
-                                                <span className="material-symbols-outlined text-[18px]">{isPrepared ? 'check' : 'add'}</span>
-                                            </button>
-                                        </div>
-                                        {isExpanded && (
-                                            <div className="px-3 pb-3 pt-0 bg-slate-50/50 dark:bg-black/20 border-t border-slate-100 dark:border-white/5">
-                                                <div className="flex gap-2 my-2">
-                                                    <span className="px-2 py-0.5 rounded bg-white dark:bg-white/10 text-[10px] font-bold uppercase tracking-wider border border-slate-200 dark:border-white/5">{spell.school}</span>
-                                                    <span className="px-2 py-0.5 rounded bg-white dark:bg-white/10 text-[10px] font-bold uppercase tracking-wider border border-slate-200 dark:border-white/5">{spell.castingTime}</span>
-                                                </div>
-                                                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{spell.description}</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                    </div>
-                </div>
-            )}
-        </div>
-      );
-  };
-
   const renderCombat = () => {
     const rageDamage = character.level < 9 ? 2 : character.level < 16 ? 3 : 4;
     const hasDueling = character.feats.some(f => f.includes('Dueling'));
@@ -803,6 +583,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
     if (character.level >= 11) martialArtsDie = '1d10';
     if (character.level >= 17) martialArtsDie = '1d12';
     
+    // Check for Wraps of Unarmed Power
     let unarmedBonus = 0;
     const equippedWraps = inventory.find(i => i.equipped && i.name.includes('Wraps of Unarmed Power'));
     if (equippedWraps) {
@@ -811,6 +592,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
         else if (equippedWraps.name.includes('+3')) unarmedBonus = 3;
     }
 
+    // Fix: Check ALL_ITEMS for type 'Weapon' safely using getItemData
     const equippedWeapons = inventory.filter(i => {
         if (!i.equipped) return false;
         const itemData = getItemData(i.name);
@@ -885,6 +667,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
       </div>
       <div className="flex flex-col gap-3 mb-6">
          {equippedWeapons.map(item => {
+             // Cast item to WeaponData safely as we filtered by type='Weapon'
              const weapon = getItemData(item.name) as WeaponData;
              if (!weapon) return null;
 
@@ -912,12 +695,14 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
              if (hasDueling && weapon.rangeType === 'Melee' && !isTwoHanded && !isDualWielding) { dmgMod += 2; activeBonuses.push("Dueling +2"); }
              if (hasThrown && isThrown) { dmgMod += 2; activeBonuses.push("Thrown +2"); }
 
+             // Magic Weapon Bonuses
              if (item.name.includes('+1')) { toHit += 1; dmgMod += 1; }
              if (item.name.includes('+2')) { toHit += 2; dmgMod += 2; }
              if (item.name.includes('+3')) { toHit += 3; dmgMod += 3; }
              if (item.name === 'Sun Blade') { toHit += 2; dmgMod += 2; }
              if (item.name === 'Holy Avenger') { toHit += 3; dmgMod += 3; }
 
+             // Wraps of Unarmed Power Bonus
              if (weapon.name === 'Unarmed Strike' && unarmedBonus > 0) {
                  toHit += unarmedBonus;
                  dmgMod += unarmedBonus;
@@ -972,6 +757,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                 const isProf = CLASS_SAVING_THROWS[character.class]?.includes(stat);
                 let save = mod + (isProf ? character.profBonus : 0);
                 
+                // Magic Item Save Bonuses
                 if (inventory.some(i => i.equipped && (i.name === 'Cloak of Protection' || i.name === 'Ring of Protection'))) save += 1;
                 
                 return (
@@ -1110,143 +896,73 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
   };
 
   const renderFeatures = () => {
-    const allFeatures: { name: string; description: string; level: number; source: string }[] = [];
+    const features: { name: string; description: string; level: number; source: string }[] = [];
     const speciesData = SPECIES_DETAILS[character.species];
-    
     if (speciesData) {
-        speciesData.traits.forEach(t => allFeatures.push({...t, source: 'Raza', level: 1}));
+        speciesData.traits.forEach(t => features.push({...t, source: 'Raza', level: 1}));
     }
-    
     const classData = CLASS_DETAILS[character.class];
     const subclassList = SUBCLASS_OPTIONS[character.class] || [];
     const subclassData = subclassList.find(s => s.name === character.subclass);
-    
     if (classData) {
         classData.traits.forEach(t => {
-             allFeatures.push({...t, source: 'Clase', level: 1});
+             features.push({...t, source: 'Clase', level: 1});
         });
     }
-    
     for (let l = 1; l <= character.level; l++) {
         const prog = CLASS_PROGRESSION[character.class]?.[l] || [];
         prog.forEach(featName => {
             if (l === 1 && classData?.traits.some(t => t.name === featName)) return;
             let desc = GENERIC_FEATURES[featName] || '';
             if (featName === 'Ability Score Improvement') desc = "Mejora de características o Dote.";
-            allFeatures.push({ name: featName, description: desc, level: l, source: 'Clase' });
+            features.push({ name: featName, description: desc, level: l, source: 'Clase' });
         });
         if (subclassData && subclassData.features[l]) {
             subclassData.features[l].forEach(t => {
-                allFeatures.push({ ...t, source: 'Subclase', level: l });
+                features.push({ ...t, source: 'Subclase', level: l });
             });
         }
     }
-    
     character.feats.forEach(f => {
         const featOpt = FEAT_OPTIONS.find(fo => fo.name === f);
-        allFeatures.push({ name: f, description: featOpt?.description || 'Dote', level: 1, source: 'Dote' });
+        features.push({ name: f, description: featOpt?.description || 'Dote', level: 1, source: 'Dote' });
     });
-
-    const categorizeFeature = (f: { name: string, description: string }) => {
-        const text = (f.name + ' ' + f.description).toLowerCase();
-        
-        // Manual Overrides
-        if (text.includes('ability score improvement')) return 'Otros';
-        if (text.includes('spellcasting') || text.includes('pact magic')) return 'Utilidad';
-
-        // Combat Keywords
-        if (
-            text.includes('damage') || text.includes('attack') || text.includes('hit point') || 
-            text.includes('heal') || text.includes('saving throw') || text.includes('armor class') || 
-            text.includes('ac ') || text.includes('resistance') || text.includes('immunity') || 
-            text.includes('initiative') || text.includes('dc') || text.includes('smite') || 
-            text.includes('weapon') || text.includes('combat') || text.includes('strike') ||
-            text.includes('defense')
-        ) {
-            return 'Combate';
-        }
-
-        // Utility Keywords
-        if (
-            text.includes('skill') || text.includes('proficiency') || text.includes('language') || 
-            text.includes('tool') || text.includes('check') || text.includes('speed') || 
-            text.includes('vision') || text.includes('ritual') || text.includes('movement') ||
-            text.includes('stealth') || text.includes('perception') || text.includes('insight') ||
-            text.includes('swim') || text.includes('fly') || text.includes('climb')
-        ) {
-            return 'Utilidad';
-        }
-
-        return 'Otros';
-    };
-
-    const categories = {
-        'Combate': [] as typeof allFeatures,
-        'Utilidad': [] as typeof allFeatures,
-        'Otros': [] as typeof allFeatures
-    };
-
-    allFeatures.forEach(f => {
-        const cat = categorizeFeature(f);
-        // @ts-ignore
-        categories[cat].push(f);
-    });
-
     const iconMap: Record<string, string> = { 'Clase': 'shield', 'Subclase': 'auto_awesome', 'Raza': 'face', 'Dote': 'military_tech' };
-    
-    const renderSection = (title: string, feats: typeof allFeatures, color: string, sectionIcon: string) => {
-        if (feats.length === 0) return null;
-        return (
-            <div className="mb-6 last:mb-0">
-                <h3 className={`text-sm font-bold uppercase tracking-wider mb-3 flex items-center gap-2 ${color}`}>
-                    <span className="material-symbols-outlined text-lg">{sectionIcon}</span>
-                    {title}
-                </h3>
-                <div className="flex flex-col gap-3">
-                    {feats.map((feat, idx) => {
-                        const uniqueKey = `${feat.name}-${feat.level}-${idx}`;
-                        const isExpanded = expandedIds[uniqueKey];
-                        const icon = iconMap[feat.source] || 'stars';
-                        
-                        return (
-                            <div key={uniqueKey} className="relative overflow-hidden rounded-xl bg-surface-dark border border-white/5 shadow-sm transition-all duration-300">
-                                <div onClick={() => toggleExpand(uniqueKey)} className="p-4 flex items-start justify-between gap-4 cursor-pointer hover:bg-white/5 transition-colors">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h3 className="text-white text-base font-bold leading-tight">{feat.name}</h3>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded">
-                                                <span className="material-symbols-outlined text-[12px]">{icon}</span>
-                                                {feat.source}
-                                            </span>
-                                            {feat.level > 1 && <span className="text-[10px] text-slate-500 font-medium">Lvl {feat.level}</span>}
-                                        </div>
-                                    </div>
-                                    <button className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:text-white transition-all ${isExpanded ? 'rotate-180' : ''}`}>
-                                        <span className="material-symbols-outlined">expand_more</span>
-                                    </button>
-                                </div>
-                                <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                                    <div className="p-4 pt-0 text-sm text-slate-400 leading-relaxed border-t border-white/5 mt-2 whitespace-pre-wrap">
-                                        {feat.description || <span className="italic">Sin descripción.</span>}
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-        );
-    };
 
     return (
-        <div className="px-4 pb-24 flex flex-col mt-4">
-            {renderSection('Combate', categories['Combate'], 'text-red-400', 'swords')}
-            {renderSection('Utilidad', categories['Utilidad'], 'text-blue-400', 'construction')}
-            {renderSection('Otros', categories['Otros'], 'text-slate-400', 'widgets')}
-
-            {allFeatures.length === 0 && (
+        <div className="px-4 pb-24 flex flex-col gap-4 mt-4">
+            {features.map((feat, idx) => {
+                const id = `feat-${idx}`;
+                const isExpanded = expandedIds[id];
+                const icon = iconMap[feat.source] || 'stars';
+                return (
+                    <div key={id} className="relative overflow-hidden rounded-xl bg-surface-dark border border-white/5 shadow-sm transition-all duration-300">
+                        <div onClick={() => toggleExpand(id)} className="p-4 flex items-start justify-between gap-4 cursor-pointer hover:bg-white/5 transition-colors">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <h3 className="text-white text-lg font-bold leading-tight">{feat.name}</h3>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded">
+                                        <span className="material-symbols-outlined text-[12px]">{icon}</span>
+                                        {feat.source}
+                                    </span>
+                                    {feat.level > 0 && <span className="text-xs text-slate-500 font-medium">Lvl {feat.level}</span>}
+                                </div>
+                            </div>
+                            <button className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:text-white transition-all ${isExpanded ? 'rotate-180' : ''}`}>
+                                <span className="material-symbols-outlined">expand_more</span>
+                            </button>
+                        </div>
+                        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                            <div className="p-4 pt-0 text-sm text-slate-400 leading-relaxed border-t border-white/5 mt-2">
+                                {feat.description || <span className="italic">Sin descripción.</span>}
+                            </div>
+                        </div>
+                    </div>
+                );
+            })}
+            {features.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-10 opacity-50">
                     <span className="material-symbols-outlined text-4xl mb-2 text-slate-300">sentiment_dissatisfied</span>
                     <p className="text-sm italic text-slate-400">No hay rasgos disponibles.</p>
@@ -1254,6 +970,318 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
             )}
         </div>
     );
+  };
+
+  const renderSpells = () => {
+    const saveDC = 8 + character.profBonus + spellMod;
+    const spellAttack = character.profBonus + spellMod;
+    const preparedCount = character.preparedSpells?.length || 0;
+
+    const preparedSpellList = character.preparedSpells || [];
+    const spellsToShow = preparedSpellList.filter(s => {
+        const detail = SPELL_DETAILS[s];
+        return detail && detail.level === activeSpellLevel;
+    }).sort();
+
+    const slotCount = getSlots(effectiveCasterType, character.level, activeSpellLevel);
+
+    return (
+    <div className="flex flex-col gap-6 px-4 pb-24 relative min-h-screen">
+       <div className="grid grid-cols-3 gap-3 mt-4">
+           <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-surface-dark border border-white/5 shadow-sm">
+              <span className="text-primary text-2xl font-bold leading-none">{formatModifier(spellMod)}</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[12px]">psychology</span> {spellStat}
+              </span>
+           </div>
+           <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-surface-dark border-2 border-white/10 shadow-sm relative overflow-hidden">
+              <div className="absolute inset-0 bg-white/5"></div>
+              <span className="text-white text-2xl font-bold leading-none relative z-10">{saveDC}</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1 flex items-center gap-1 relative z-10">
+                  <span className="material-symbols-outlined text-[12px]">shield</span> Save DC
+              </span>
+           </div>
+           <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-surface-dark border border-white/5 shadow-sm">
+              <span className="text-primary text-2xl font-bold leading-none">{formatModifier(spellAttack)}</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[12px]">swords</span> Attack
+              </span>
+           </div>
+       </div>
+
+       <div className="bg-surface-dark rounded-xl p-4 border border-white/5">
+           <div className="flex justify-between items-center py-1">
+               <span className="text-sm font-medium text-slate-400 flex items-center gap-2"><span className="material-symbols-outlined text-lg">auto_stories</span> Prepared Spells</span>
+               <span className="text-white font-bold">{preparedCount} <span className="text-slate-600 text-xs">/ {maxSpells + maxCantrips}</span></span>
+           </div>
+       </div>
+
+       <div className="flex overflow-x-auto gap-2 no-scrollbar py-1">
+           {maxCantrips > 0 && (
+               <button 
+                   onClick={() => setActiveSpellLevel(0)}
+                   className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all ${activeSpellLevel === 0 ? 'bg-primary text-background-dark' : 'bg-surface-dark text-slate-500 hover:text-white border border-white/5'}`}
+               >
+                   Cantrips
+               </button>
+           )}
+           {Array.from({length: maxSpellLevel}, (_, i) => i + 1).map(lvl => {
+               return (
+                   <button 
+                       key={lvl}
+                       onClick={() => setActiveSpellLevel(lvl)}
+                       className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all ${activeSpellLevel === lvl ? 'bg-primary text-background-dark' : 'bg-surface-dark text-slate-500 hover:text-white border border-white/5'}`}
+                   >
+                       Level {lvl}
+                   </button>
+               );
+           })}
+       </div>
+
+       {activeSpellLevel > 0 && slotCount > 0 && (
+           <div className="flex flex-col gap-2 animate-fadeIn">
+              <div className="flex justify-between items-end px-1">
+                 <h3 className="text-white text-base font-bold">Spell Slots ({slotCount})</h3>
+                 <button onClick={resetSlots} className="text-[10px] text-primary font-bold hover:underline uppercase tracking-wider">Reset</button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                 {Array.from({length: slotCount}, (_, i) => {
+                     const isUsed = usedSlots[`${activeSpellLevel}-${i}`];
+                     return (
+                     <button key={i} onClick={() => toggleSlot(activeSpellLevel, i)} className={`group relative h-10 w-10 rounded-lg border-2 border-white/10 overflow-hidden flex items-center justify-center transition-colors ${isUsed ? 'bg-surface-dark' : 'bg-primary/20 border-primary/50'}`}>
+                        <span className={`material-symbols-outlined transition-all duration-200 ${isUsed ? 'text-slate-600 scale-75' : 'text-primary scale-100'}`}>bolt</span>
+                     </button>
+                 )})}
+              </div>
+           </div>
+       )}
+
+       <div className="flex flex-col gap-3">
+           {spellsToShow.length === 0 ? (
+               <div className="text-center p-8 bg-surface-dark rounded-xl border border-dashed border-white/10 mt-2 flex flex-col items-center">
+                   <span className="material-symbols-outlined text-4xl text-slate-600 mb-2">auto_stories</span>
+                   <p className="text-slate-500 text-sm mb-2">No tienes hechizos preparados de nivel {activeSpellLevel}.</p>
+                   <button onClick={() => setShowGrimoire(true)} className="text-primary font-bold text-sm">Abrir Grimorio</button>
+               </div>
+           ) : spellsToShow.map(spellName => {
+               const spell = SPELL_DETAILS[spellName];
+               if (!spell) return null;
+               
+               const theme = SCHOOL_THEMES[spell.school] || { text: 'text-slate-400', bg: 'bg-slate-100 dark:bg-white/5', border: 'border-white/5', icon: 'auto_stories' };
+               const summary = getSpellSummary(spell.description, spell.school);
+
+               return (
+               <div 
+                  key={spellName} 
+                  onClick={() => setSelectedSpellName(spellName)}
+                  className={`p-4 rounded-xl bg-surface-dark border ${theme.border} shadow-sm hover:border-opacity-100 transition-all cursor-pointer flex items-center justify-between group active:scale-[0.99]`}
+               >
+                  <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${theme.bg} ${theme.text} shrink-0`}>
+                          <span className="font-bold text-sm">{spell.level === 0 ? 'C' : spell.level}</span>
+                      </div>
+                      <div className="min-w-0">
+                          <h3 className="text-white font-bold leading-tight group-hover:text-primary transition-colors truncate">{spell.name}</h3>
+                          <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+                              <span className={`flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold ${summary.color}`}>
+                                  <span className="material-symbols-outlined text-[10px]">{summary.icon}</span>
+                                  {summary.text}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
+                                  <span className="w-0.5 h-0.5 rounded-full bg-slate-600"></span>
+                                  {formatShort(spell.castingTime)}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
+                                  <span className="w-0.5 h-0.5 rounded-full bg-slate-600"></span>
+                                  {formatShort(spell.range)}
+                              </span>
+                          </div>
+                      </div>
+                  </div>
+                  <span className={`material-symbols-outlined ${theme.text} opacity-50 group-hover:opacity-100 shrink-0`}>chevron_right</span>
+               </div>
+           )})}
+       </div>
+
+       <div className="fixed bottom-24 right-6 z-20">
+            <button 
+                onClick={() => setShowGrimoire(true)}
+                className="flex items-center gap-2 pl-4 pr-5 py-3 rounded-full bg-primary text-background-dark font-bold shadow-[0_4px_20px_rgba(53,158,255,0.4)] hover:scale-105 transition-transform"
+            >
+                <span className="material-symbols-outlined text-2xl">menu_book</span>
+                <span>Grimoire</span>
+            </button>
+       </div>
+
+       {showGrimoire && (
+           <div className="fixed inset-0 z-50 bg-background-dark flex flex-col animate-fadeIn">
+               <div className="flex flex-col border-b border-white/10 bg-surface-dark">
+                   <div className="flex items-center gap-4 p-4 pb-2">
+                       <button onClick={() => setShowGrimoire(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white"><span className="material-symbols-outlined">close</span></button>
+                       <div className="flex-1 relative">
+                           <input type="text" placeholder="Search spell..." value={grimoireSearch} onChange={(e) => setGrimoireSearch(e.target.value)} className="w-full bg-black/20 border border-white/5 rounded-xl py-2 pl-10 pr-4 text-white placeholder:text-slate-500 outline-none focus:border-primary/50"/>
+                           <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-500">search</span>
+                       </div>
+                   </div>
+                   
+                   <div className="flex justify-around items-center px-4 pb-3 text-xs font-bold uppercase tracking-wider">
+                        <div className={`flex items-center gap-1 ${currentCantrips > maxCantrips ? 'text-red-500' : currentCantrips === maxCantrips ? 'text-primary' : 'text-slate-400'}`}><span>Trucos:</span><span>{currentCantrips} / {maxCantrips}</span></div>
+                        <div className={`w-px h-4 bg-white/10`}></div>
+                        <div className={`flex items-center gap-1 ${currentSpells > maxSpells ? 'text-red-500' : currentSpells === maxSpells ? 'text-primary' : 'text-slate-400'}`}><span>Hechizos:</span><span>{currentSpells} / {maxSpells}</span></div>
+                   </div>
+               </div>
+
+               <div className="flex overflow-x-auto gap-2 p-2 border-b border-white/5 no-scrollbar bg-surface-dark">
+                   {maxCantrips > 0 && (
+                       <button onClick={() => setGrimoireLevel(0)} className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors ${grimoireLevel === 0 ? 'bg-white text-background-dark' : 'bg-white/5 text-slate-400'}`}>Cantrips</button>
+                   )}
+                   {Array.from({length: maxSpellLevel}, (_, i) => i + 1).map(lvl => (
+                       <button key={lvl} onClick={() => setGrimoireLevel(lvl)} className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors ${grimoireLevel === lvl ? 'bg-white text-background-dark' : 'bg-white/5 text-slate-400'}`}>Lvl {lvl}</button>
+                   ))}
+               </div>
+
+               {grimoireLevel > 0 && (
+                   <div className="px-4 py-2 bg-slate-900/50 border-b border-white/5 flex items-center justify-between text-xs font-bold text-slate-400">
+                       <span>
+                           {effectiveCasterType === 'pact' 
+                               ? (grimoireLevel <= 5 
+                                   ? `Espacios de Pacto: ${getWarlockSlots(character.level).count} (Nivel ${getWarlockSlots(character.level).level})`
+                                   : 'Mystic Arcanum: 1 uso/día')
+                               : `Espacios de Nivel ${grimoireLevel}: ${getSlots(effectiveCasterType, character.level, grimoireLevel)}`
+                           }
+                       </span>
+                       <span className="material-symbols-outlined text-[14px]">bolt</span>
+                   </div>
+               )}
+
+               <div className="flex-1 overflow-y-auto p-4 gap-2 flex flex-col">
+                   {grimoireSpellList
+                       .filter(name => {
+                           const s = SPELL_DETAILS[name];
+                           if (!s) return false;
+                           if (s.level !== grimoireLevel) return false;
+                           if (grimoireSearch && !name.toLowerCase().includes(grimoireSearch.toLowerCase())) return false;
+                           return true;
+                       })
+                       .sort()
+                       .slice(0, 50) // Limit rendering to 50 items to prevent OOM
+                       .map(name => {
+                           const s = SPELL_DETAILS[name];
+                           const isPrepared = (character.preparedSpells || []).includes(name);
+                           const isCantrip = s.level === 0;
+                           const limitReached = isCantrip ? currentCantrips >= maxCantrips : currentSpells >= maxSpells;
+                           const isDisabled = !isPrepared && limitReached;
+                           const theme = SCHOOL_THEMES[s.school] || { text: 'text-slate-400', icon: 'auto_stories' };
+                           const summary = getSpellSummary(s.description, s.school);
+
+                           return (
+                               <div key={name} className={`rounded-xl border transition-all ${isPrepared ? 'bg-primary/5 border-primary/50' : 'bg-surface-dark border-white/5'}`}>
+                                   <div className="flex items-center">
+                                       <button onClick={() => setExpandedGrimoireId(expandedGrimoireId === name ? null : name)} className="flex-1 p-3 text-left">
+                                           <div className="flex items-center gap-2">
+                                               <p className={`font-bold ${isPrepared ? 'text-primary' : isDisabled ? 'text-slate-500' : 'text-white'}`}>{name}</p>
+                                               {expandedGrimoireId === name ? <span className="material-symbols-outlined text-[14px] text-slate-500">expand_less</span> : <span className="material-symbols-outlined text-[14px] text-slate-500">expand_more</span>}
+                                           </div>
+                                           <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+                                              <div className={`flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold ${summary.color}`}>
+                                                  <span className="material-symbols-outlined text-[10px]">{summary.icon}</span>
+                                                  {summary.text}
+                                              </div>
+                                              <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
+                                                  <span className="w-0.5 h-0.5 rounded-full bg-slate-600"></span>
+                                                  {formatShort(s.castingTime)}
+                                              </span>
+                                              <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
+                                                  <span className="w-0.5 h-0.5 rounded-full bg-slate-600"></span>
+                                                  {formatShort(s.range)}
+                                              </span>
+                                           </div>
+                                       </button>
+                                       <button onClick={() => togglePreparedSpell(name)} disabled={isDisabled} className={`p-4 border-l border-white/5 flex items-center justify-center transition-colors ${isDisabled ? 'text-slate-600 cursor-not-allowed' : isPrepared ? 'text-primary bg-primary/10' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                                            <span className="material-symbols-outlined">{isPrepared ? 'check_circle' : isDisabled ? 'block' : 'add_circle'}</span>
+                                       </button>
+                                   </div>
+                                   {expandedGrimoireId === name && (
+                                       <div className="px-3 pb-3 pt-0 text-xs text-slate-400 border-t border-white/5 bg-black/20">
+                                           <div className="grid grid-cols-3 py-2 gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                               <span className="flex items-center gap-1 bg-white/5 rounded px-1.5 py-1"><span className="material-symbols-outlined text-[10px]">straighten</span> {s.range}</span>
+                                               <span className="flex items-center gap-1 bg-white/5 rounded px-1.5 py-1"><span className="material-symbols-outlined text-[10px]">science</span> {s.components}</span>
+                                               <span className="flex items-center gap-1 bg-white/5 rounded px-1.5 py-1"><span className="material-symbols-outlined text-[10px]">timer</span> {s.duration}</span>
+                                           </div>
+                                           <p className="leading-relaxed mt-1">{s.description}</p>
+                                       </div>
+                                   )}
+                               </div>
+                           );
+                       })
+                   }
+               </div>
+           </div>
+       )}
+
+       {selectedSpellName && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setSelectedSpellName(null)}>
+                <div className="w-full max-w-sm bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-2xl transform transition-all scale-100 flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
+                    {(() => {
+                        const spell = SPELL_DETAILS[selectedSpellName];
+                        if (!spell) return null;
+                        const theme = SCHOOL_THEMES[spell.school] || { text: 'text-slate-400', bg: 'bg-white/5', border: 'border-white/5', icon: 'auto_stories' };
+                        
+                        return (
+                        <>
+                            {/* Header */}
+                            <div className="flex justify-between items-start mb-4 shrink-0">
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{selectedSpellName}</h3>
+                                    <span className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1 ${theme.text}`}>
+                                        <span className="material-symbols-outlined text-[14px]">{theme.icon}</span>
+                                        {spell.level === 0 ? 'Cantrip' : `Level ${spell.level}`} {spell.school}
+                                    </span>
+                                </div>
+                                <button onClick={() => setSelectedSpellName(null)} className="text-slate-400 hover:text-slate-600"><span className="material-symbols-outlined">close</span></button>
+                            </div>
+
+                            {/* Stats Grid */}
+                            <div className="grid grid-cols-3 gap-2 mb-4 shrink-0">
+                                <div className="bg-slate-100 dark:bg-white/5 p-2 rounded-lg text-center">
+                                    <span className="material-symbols-outlined text-[16px] text-slate-400 block mb-1">timer</span>
+                                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200 block leading-tight">{spell.castingTime}</span>
+                                </div>
+                                <div className="bg-slate-100 dark:bg-white/5 p-2 rounded-lg text-center">
+                                    <span className="material-symbols-outlined text-[16px] text-slate-400 block mb-1">straighten</span>
+                                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200 block leading-tight">{spell.range}</span>
+                                </div>
+                                <div className="bg-slate-100 dark:bg-white/5 p-2 rounded-lg text-center">
+                                    <span className="material-symbols-outlined text-[16px] text-slate-400 block mb-1">hourglass_empty</span>
+                                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200 block leading-tight">{spell.duration}</span>
+                                </div>
+                            </div>
+
+                            {/* Description */}
+                            <div className="flex-1 overflow-y-auto custom-scrollbar mb-4 pr-1">
+                                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                                    {spell.description}
+                                </p>
+                                <div className="mt-3 pt-3 border-t border-slate-200 dark:border-white/10 text-xs text-slate-500">
+                                    <span className="font-bold">Components:</span> {spell.components}
+                                </div>
+                            </div>
+
+                            {/* Action */}
+                            <div className="shrink-0">
+                                <button onClick={() => { castSpell(spell.level || 0); setSelectedSpellName(null); }} className="w-full flex items-center justify-center gap-2 h-12 rounded-xl bg-primary hover:bg-primary-dark text-background-dark font-bold text-base transition-colors shadow-lg shadow-primary/20 active:scale-95">
+                                    <span className="material-symbols-outlined">auto_fix</span>
+                                    {spell.level === 0 ? 'Lanzar Truco' : 'Lanzar Hechizo'}
+                                </button>
+                            </div>
+                        </>
+                        );
+                    })()}
+                </div>
+            </div>
+        )}
+    </div>
+  );
   };
 
   return (
