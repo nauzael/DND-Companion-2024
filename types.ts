@@ -6,6 +6,13 @@ export interface InventoryItem {
   equipped: boolean;
 }
 
+export interface NoteItem {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+}
+
 export interface Character {
   id: string;
   name: string;
@@ -27,6 +34,7 @@ export interface Character {
   imageUrl: string;
   inventory: InventoryItem[]; 
   preparedSpells?: string[];
+  notes?: NoteItem[];
 }
 
 export interface Spell {
@@ -68,7 +76,7 @@ export interface ArmorData extends ItemData {
 }
 
 export type ViewState = 'list' | 'create' | 'sheet';
-export type SheetTab = 'combat' | 'inventory' | 'spells' | 'features';
+export type SheetTab = 'combat' | 'inventory' | 'spells' | 'features' | 'notes';
 export type CreatorStep = 1 | 2 | 3 | 4 | 5;
 
 export type Ability = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';

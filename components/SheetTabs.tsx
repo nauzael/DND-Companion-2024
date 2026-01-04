@@ -5,6 +5,7 @@ import CombatTab from './sheet/CombatTab';
 import InventoryTab from './sheet/InventoryTab';
 import SpellsTab from './sheet/SpellsTab';
 import FeaturesTab from './sheet/FeaturesTab';
+import NotesTab from './sheet/NotesTab';
 import { getEffectiveCasterType } from '../utils/sheetUtils';
 
 interface SheetTabsProps {
@@ -48,6 +49,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
         {activeTab === 'inventory' && <InventoryTab character={character} onUpdate={onUpdate} />}
         {activeTab === 'spells' && <SpellsTab character={character} onUpdate={onUpdate} />}
         {activeTab === 'features' && <FeaturesTab character={character} />}
+        {activeTab === 'notes' && <NotesTab character={character} onUpdate={onUpdate} />}
       </main>
 
       {/* Floating Compact Tab Navigation */}
@@ -57,6 +59,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
             { id: 'features', icon: 'stars', label: 'Feats' },
             { id: 'spells', icon: 'auto_stories', label: 'Spells', disabled: !isCaster },
             { id: 'inventory', icon: 'backpack', label: 'Bag' },
+            { id: 'notes', icon: 'edit_note', label: 'Notes' },
           ].map((tab) => (
             <button
               key={tab.id}

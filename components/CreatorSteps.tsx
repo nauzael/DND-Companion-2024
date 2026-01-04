@@ -543,7 +543,8 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                 equipped: false
               };
             }),
-            imageUrl: charImage
+            imageUrl: charImage,
+            notes: [] // Initialize notes as empty array
         };
         onFinish(newCharacter);
     }
@@ -554,6 +555,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     else onBack();
   };
 
+  // ... (rest of the component remains unchanged)
   const renderProgressBar = () => (
     <div className="px-6 pb-2">
       <div className="flex w-full flex-row items-center justify-between gap-2">
@@ -986,6 +988,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
             </>
         )}
 
+        {/* ... (Step 2, 3, 4 remain unchanged) ... */}
         {step === 2 && (
             <div className="px-6 py-4 space-y-6">
                 
@@ -1331,6 +1334,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
         {step === 5 && (
             <div className="px-6 py-4 space-y-6">
+                 {/* ... (Step 5 logic for creating character) */}
                  {/* Header Identity */}
                  <div className="flex flex-col items-center">
                     <div className="w-24 h-24 rounded-3xl bg-slate-200 dark:bg-surface-light mb-3 shadow-lg border-2 border-white dark:border-white/10" style={{backgroundImage: `url(${charImage})`, backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
@@ -1350,6 +1354,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                     </div>
                  </div>
 
+                 {/* ... (Existing Combat Stats, Abilities, etc display code) ... */}
                  {/* Combat Stats */}
                  <div className="grid grid-cols-4 gap-3">
                     {[
