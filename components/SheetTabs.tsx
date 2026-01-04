@@ -16,6 +16,7 @@ interface SheetTabsProps {
 
 const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) => {
   const [activeTab, setActiveTab] = useState<SheetTab>('combat');
+  const [slideDirection, setSlideDirection] = useState<'forward' | 'backward'>('forward');
   
   // Use refs for touch coordinates to avoid re-renders during gesture
   const touchStart = useRef<{ x: number, y: number } | null>(null);
@@ -42,6 +43,19 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
     { id: 'inventory', icon: 'backpack', label: 'Bag' },
     { id: 'notes', icon: 'edit_note', label: 'Notes' },
   ];
+
+  const handleTabChange = (newTabId: SheetTab) => {
+      const currentIndex = tabs.findIndex(t => t.id === activeTab);
+      const newIndex = tabs.findIndex(t => t.id === newTabId);
+      
+      if (currentIndex === newIndex) return;
+
+      setSlideDirection(newIndex > currentIndex ? 'forward' : 'backward');
+      setActiveTab(newTabId);
+      
+      // Scroll to top on tab change for better UX
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Swipe Handlers
   const onTouchStart = (e: React.TouchEvent) => {
@@ -76,11 +90,11 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
         const currentIndex = validTabs.findIndex(t => t.id === activeTab);
         
         if (isLeftSwipe && currentIndex < validTabs.length - 1) {
-            setActiveTab(validTabs[currentIndex + 1].id as SheetTab);
+            handleTabChange(validTabs[currentIndex + 1].id as SheetTab);
         }
         
         if (isRightSwipe && currentIndex > 0) {
-            setActiveTab(validTabs[currentIndex - 1].id as SheetTab);
+            handleTabChange(validTabs[currentIndex - 1].id as SheetTab);
         }
     }
   };
@@ -92,6 +106,19 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
     >
+      <style>{`
+        @keyframes slideInRight {
+          from { transform: translateX(20px); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideInLeft {
+          from { transform: translateX(-20px); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        .animate-slide-right { animation: slideInRight 0.3s ease-out forwards; }
+        .animate-slide-left { animation: slideInLeft 0.3s ease-out forwards; }
+      `}</style>
+
       {/* Header */}
       <div className="sticky top-0 z-30 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-black/5 dark:border-white/5 px-4 py-3 flex items-center justify-between">
         <button onClick={onBack} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
@@ -104,12 +131,17 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
         <div className="w-10"></div> {/* Spacer */}
       </div>
 
-      <main className="flex-1 overflow-y-auto no-scrollbar relative">
-        {activeTab === 'combat' && <CombatTab character={character} onUpdate={onUpdate} />}
-        {activeTab === 'inventory' && <InventoryTab character={character} onUpdate={onUpdate} />}
-        {activeTab === 'spells' && <SpellsTab character={character} onUpdate={onUpdate} />}
-        {activeTab === 'features' && <FeaturesTab character={character} />}
-        {activeTab === 'notes' && <NotesTab character={character} onUpdate={onUpdate} />}
+      <main className="flex-1 overflow-y-auto no-scrollbar relative overflow-x-hidden">
+        <div 
+            key={activeTab} // Key forces re-render to trigger animation
+            className={`min-h-full ${slideDirection === 'forward' ? 'animate-slide-right' : 'animate-slide-left'}`}
+        >
+            {activeTab === 'combat' && <CombatTab character={character} onUpdate={onUpdate} />}
+            {activeTab === 'inventory' && <InventoryTab character={character} onUpdate={onUpdate} />}
+            {activeTab === 'spells' && <SpellsTab character={character} onUpdate={onUpdate} />}
+            {activeTab === 'features' && <FeaturesTab character={character} />}
+            {activeTab === 'notes' && <NotesTab character={character} onUpdate={onUpdate} />}
+        </div>
       </main>
 
       {/* Floating Compact Tab Navigation */}
@@ -117,7 +149,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => !tab.disabled && setActiveTab(tab.id as SheetTab)}
+              onClick={() => !tab.disabled && handleTabChange(tab.id as SheetTab)}
               disabled={tab.disabled}
               className={`flex items-center justify-center gap-2 h-11 rounded-full transition-all duration-300 overflow-hidden ${
                   activeTab === tab.id 
