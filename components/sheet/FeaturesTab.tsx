@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Character } from '../../types';
 import { SPECIES_DETAILS, CLASS_DETAILS, CLASS_PROGRESSION, SUBCLASS_OPTIONS } from '../../Data/characterOptions';
 import { FEAT_OPTIONS, GENERIC_FEATURES } from '../../Data/feats';
@@ -94,8 +95,8 @@ const FeaturesTab: React.FC<FeaturesTabProps> = ({ character }) => {
             )}
 
             {/* Feature Modal */}
-            {selectedFeature && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setSelectedFeature(null)}>
+            {selectedFeature && createPortal(
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setSelectedFeature(null)}>
                     <div className="w-full max-w-sm bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-2xl flex flex-col max-h-[85vh] relative" onClick={e => e.stopPropagation()}>
                         
                         <div className="flex justify-between items-start mb-4 shrink-0">
@@ -126,7 +127,8 @@ const FeaturesTab: React.FC<FeaturesTabProps> = ({ character }) => {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
