@@ -149,6 +149,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   const [selectedLanguage2, setSelectedLanguage2] = useState<string>(''); 
   const [selectedFeat, setSelectedFeat] = useState<string>(''); 
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [selectedHumanSkill, setSelectedHumanSkill] = useState<string>('');
   
   // Stats & HP State
   const [statMethod, setStatMethod] = useState<'pointBuy' | 'standard' | 'manual'>('pointBuy');
@@ -243,6 +244,9 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   useEffect(() => {
     if (speciesData?.name === 'Human') {
         if (!selectedFeat) setSelectedFeat(FEAT_OPTIONS[0].name);
+    } else {
+        // Reset human specific choices if switching away
+        setSelectedHumanSkill('');
     }
   }, [selectedSpecies, speciesData, selectedFeat]);
 
@@ -336,7 +340,9 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
   const canProceed = () => {
     if (step === 4) {
-        return selectedSkills.length === classSkillOptions.count;
+        const classSkillsOk = selectedSkills.length === classSkillOptions.count;
+        const humanSkillOk = selectedSpecies === 'Human' ? !!selectedHumanSkill : true;
+        return classSkillsOk && humanSkillOk;
     }
     return true;
   };
@@ -526,7 +532,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
             speed: calculateSpeed(),
             profBonus: Math.ceil(1 + (level / 4)),
             stats: finalStats,
-            skills: [...(backgroundData?.skills || []), ...selectedSkills],
+            skills: [...(backgroundData?.skills || []), ...selectedSkills, ...(selectedHumanSkill ? [selectedHumanSkill] : [])],
             languages: ['Common', selectedLanguage1, selectedLanguage2].filter(Boolean),
             feats: [
                 backgroundData?.feat, 
@@ -1288,46 +1294,76 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
         )}
 
         {step === 4 && (
-            <div className="px-6 py-4">
-                <div className="flex justify-between items-center mb-4">
-                     <h3 className="text-xl font-bold">Habilidades</h3>
-                     <div className="text-sm font-medium text-slate-500">
-                        Elegidas: <span className={`${selectedSkills.length === classSkillOptions.count ? 'text-primary' : 'text-slate-900 dark:text-white'} font-bold`}>{selectedSkills.length}</span> / {classSkillOptions.count}
-                     </div>
-                </div>
+            <div className="px-6 py-4 space-y-6">
+                {selectedSpecies === 'Human' && (
+                    <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/20">
+                        <div className="flex items-center gap-2 mb-3">
+                            <span className="material-symbols-outlined text-primary">accessibility_new</span>
+                            <h3 className="text-base font-bold text-slate-900 dark:text-white">Habilidad Racial (Humano)</h3>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                            Los humanos aprenden rápido. Elige una habilidad adicional de cualquier tipo.
+                        </p>
+                        <select 
+                            value={selectedHumanSkill}
+                            onChange={(e) => setSelectedHumanSkill(e.target.value)}
+                            className="w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/50"
+                        >
+                            <option value="" disabled>Selecciona una habilidad extra...</option>
+                            {SKILL_LIST.map(skill => {
+                                // Exclude background skills and currently selected class skills
+                                if (backgroundData?.skills.includes(skill)) return null;
+                                if (selectedSkills.includes(skill)) return null;
+                                return <option key={skill} value={skill}>{skill}</option>;
+                            })}
+                        </select>
+                    </div>
+                )}
 
-                <div className="grid grid-cols-1 gap-2">
-                    {SKILL_LIST.map(skill => {
-                        const isAvailable = classSkillOptions.options === 'Any' || classSkillOptions.options.includes(skill);
-                        const isSelected = selectedSkills.includes(skill);
-                        const isBackground = backgroundData?.skills.includes(skill);
+                <div>
+                    <div className="flex justify-between items-center mb-4">
+                         <h3 className="text-xl font-bold">Habilidades de Clase</h3>
+                         <div className="text-sm font-medium text-slate-500">
+                            Elegidas: <span className={`${selectedSkills.length === classSkillOptions.count ? 'text-primary' : 'text-slate-900 dark:text-white'} font-bold`}>{selectedSkills.length}</span> / {classSkillOptions.count}
+                         </div>
+                    </div>
 
-                        if (!isAvailable && !isBackground) return null;
+                    <div className="grid grid-cols-1 gap-2">
+                        {SKILL_LIST.map(skill => {
+                            const isAvailable = classSkillOptions.options === 'Any' || classSkillOptions.options.includes(skill);
+                            const isSelected = selectedSkills.includes(skill);
+                            const isBackground = backgroundData?.skills.includes(skill);
+                            const isHumanSelected = selectedHumanSkill === skill;
 
-                        return (
-                            <button 
-                                key={skill}
-                                onClick={() => !isBackground && toggleSkill(skill)}
-                                disabled={isBackground}
-                                className={`
-                                    flex items-center justify-between p-3.5 rounded-xl border transition-all
-                                    ${isBackground 
-                                        ? 'bg-slate-100 dark:bg-white/5 border-transparent opacity-80' 
-                                        : isSelected 
-                                            ? 'bg-primary/5 border-primary shadow-[0_0_15px_rgba(53,158,255,0.2)]' 
-                                            : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-white/10 hover:border-primary/50'
-                                    }
-                                `}
-                            >
-                                <span className={`font-bold ${isSelected || isBackground ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>
-                                    {skill} {isBackground && <span className="text-[10px] text-primary uppercase ml-2">(Trasfondo)</span>}
-                                </span>
-                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected || isBackground ? 'bg-primary border-primary' : 'border-slate-300 dark:border-slate-600'}`}>
-                                    {(isSelected || isBackground) && <span className="material-symbols-outlined text-sm text-black font-bold">check</span>}
-                                </div>
-                            </button>
-                        );
-                    })}
+                            if (!isAvailable && !isBackground && !isHumanSelected) return null;
+
+                            return (
+                                <button 
+                                    key={skill}
+                                    onClick={() => !isBackground && !isHumanSelected && toggleSkill(skill)}
+                                    disabled={isBackground || isHumanSelected}
+                                    className={`
+                                        flex items-center justify-between p-3.5 rounded-xl border transition-all
+                                        ${isBackground || isHumanSelected
+                                            ? 'bg-slate-100 dark:bg-white/5 border-transparent opacity-80' 
+                                            : isSelected 
+                                                ? 'bg-primary/5 border-primary shadow-[0_0_15px_rgba(53,158,255,0.2)]' 
+                                                : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-white/10 hover:border-primary/50'
+                                        }
+                                    `}
+                                >
+                                    <span className={`font-bold ${isSelected || isBackground || isHumanSelected ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>
+                                        {skill} 
+                                        {isBackground && <span className="text-[10px] text-primary uppercase ml-2">(Trasfondo)</span>}
+                                        {isHumanSelected && <span className="text-[10px] text-blue-500 uppercase ml-2">(Humano)</span>}
+                                    </span>
+                                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected || isBackground || isHumanSelected ? 'bg-primary border-primary' : 'border-slate-300 dark:border-slate-600'}`}>
+                                        {(isSelected || isBackground || isHumanSelected) && <span className="material-symbols-outlined text-sm text-black font-bold">check</span>}
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
         )}
@@ -1449,7 +1485,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                  <div>
                     <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5 pl-1">Habilidades Entrenadas</h4>
                     <div className="flex flex-wrap gap-2">
-                        {[...(backgroundData?.skills || []), ...selectedSkills].map(skill => (
+                        {[...(backgroundData?.skills || []), ...selectedSkills, ...(selectedHumanSkill ? [selectedHumanSkill] : [])].map(skill => (
                             <div key={skill} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary">
                                 <span className="material-symbols-outlined text-[14px]">check</span>
                                 <span className="text-xs font-bold">{skill}</span>

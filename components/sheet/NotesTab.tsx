@@ -74,13 +74,13 @@ const NoteCard: React.FC<{
 const NotesTab: React.FC<NotesTabProps> = ({ character, onUpdate }) => {
     // State to hold the array of notes.
     const [notesList, setNotesList] = useState<NoteItem[]>(() => {
-        const raw = character.notes;
-        if (Array.isArray(raw)) return raw;
-        if (typeof raw === 'string' && raw.trim().length > 0) {
+        const raw = character.notes as unknown;
+        if (Array.isArray(raw)) return raw as NoteItem[];
+        if (typeof raw === 'string' && (raw as string).trim().length > 0) {
             return [{
                 id: 'legacy-note',
                 title: 'Notas Generales',
-                content: raw,
+                content: raw as string,
                 date: new Date().toLocaleDateString()
             }];
         }

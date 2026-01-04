@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Character, SheetTab } from '../types';
 import CombatTab from './sheet/CombatTab';
 import InventoryTab from './sheet/InventoryTab';
@@ -16,6 +16,11 @@ interface SheetTabsProps {
 
 const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) => {
   const [activeTab, setActiveTab] = useState<SheetTab>('combat');
+  
+  // Use refs for touch coordinates to avoid re-renders during gesture
+  const touchStart = useRef<{ x: number, y: number } | null>(null);
+  const touchEnd = useRef<{ x: number, y: number } | null>(null);
+  const minSwipeDistance = 50;
 
   // Magic Initiate Detection
   const magicInitiateType = useMemo(() => {
@@ -30,8 +35,63 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
 
   const isCaster = effectiveCasterType !== 'none' || !!magicInitiateType || (character.preparedSpells && character.preparedSpells.length > 0);
 
+  const tabs = [
+    { id: 'combat', icon: 'swords', label: 'Combat' },
+    { id: 'features', icon: 'stars', label: 'Feats' },
+    { id: 'spells', icon: 'auto_stories', label: 'Spells', disabled: !isCaster },
+    { id: 'inventory', icon: 'backpack', label: 'Bag' },
+    { id: 'notes', icon: 'edit_note', label: 'Notes' },
+  ];
+
+  // Swipe Handlers
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEnd.current = null;
+    touchStart.current = {
+        x: e.targetTouches[0].clientX,
+        y: e.targetTouches[0].clientY
+    };
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEnd.current = {
+        x: e.targetTouches[0].clientX,
+        y: e.targetTouches[0].clientY
+    };
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart.current || !touchEnd.current) return;
+    
+    const distanceX = touchStart.current.x - touchEnd.current.x;
+    const distanceY = touchStart.current.y - touchEnd.current.y;
+    
+    // If vertical movement is greater than horizontal, assume scrolling and do not swipe
+    if (Math.abs(distanceY) > Math.abs(distanceX)) return;
+
+    const isLeftSwipe = distanceX > minSwipeDistance;
+    const isRightSwipe = distanceX < -minSwipeDistance;
+
+    if (isLeftSwipe || isRightSwipe) {
+        const validTabs = tabs.filter(t => !t.disabled);
+        const currentIndex = validTabs.findIndex(t => t.id === activeTab);
+        
+        if (isLeftSwipe && currentIndex < validTabs.length - 1) {
+            setActiveTab(validTabs[currentIndex + 1].id as SheetTab);
+        }
+        
+        if (isRightSwipe && currentIndex > 0) {
+            setActiveTab(validTabs[currentIndex - 1].id as SheetTab);
+        }
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full min-h-screen bg-background-light dark:bg-background-dark relative">
+    <div 
+        className="flex flex-col h-full min-h-screen bg-background-light dark:bg-background-dark relative"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+    >
       {/* Header */}
       <div className="sticky top-0 z-30 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-black/5 dark:border-white/5 px-4 py-3 flex items-center justify-between">
         <button onClick={onBack} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
@@ -54,13 +114,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
 
       {/* Floating Compact Tab Navigation */}
       <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white/90 dark:bg-[#1E293B]/90 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.12)] p-1.5 z-40 flex items-center gap-1.5">
-          {[
-            { id: 'combat', icon: 'swords', label: 'Combat' },
-            { id: 'features', icon: 'stars', label: 'Feats' },
-            { id: 'spells', icon: 'auto_stories', label: 'Spells', disabled: !isCaster },
-            { id: 'inventory', icon: 'backpack', label: 'Bag' },
-            { id: 'notes', icon: 'edit_note', label: 'Notes' },
-          ].map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => !tab.disabled && setActiveTab(tab.id as SheetTab)}
