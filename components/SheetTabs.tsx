@@ -282,12 +282,13 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
           ))}
       </div>
 
+      {/* Centered Level Up Modal */}
       {showLevelUp && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-              <div className="w-full max-w-md bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[85vh]">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
+              <div className="w-full max-w-md bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[85vh] animate-scaleUp">
                   <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-emerald-600"></div>
                   
-                  <div className="text-center mb-4 shrink-0">
+                  <div className="text-center mb-4 shrink-0 pt-2">
                       <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 flex items-center justify-center mx-auto mb-3 border-4 border-white dark:border-surface-dark shadow-lg">
                           <span className="material-symbols-outlined text-3xl">arrow_upward</span>
                       </div>
@@ -297,7 +298,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                       </p>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-5">
+                  <div className="flex-1 overflow-y-auto no-scrollbar pr-1 space-y-5 border-t border-slate-100 dark:border-white/5 mt-4 pt-6">
                       <div className="bg-slate-50 dark:bg-black/20 p-4 rounded-2xl border border-slate-100 dark:border-white/5">
                           <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 text-center">Aumento de HP Máximo</label>
                           <div className="flex items-center justify-center gap-4">
@@ -320,15 +321,12 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                                   <span className="material-symbols-outlined">add</span>
                               </button>
                           </div>
-                          <p className="text-[10px] text-center text-slate-400 mt-2">
-                              Sugerido: {Math.floor((HIT_DIE[character.class] || 8) / 2) + 1} (Media) + {Math.floor(((getFinalStats(character).CON || 10) - 10) / 2)} (CON) {character.subclass === 'Draconic Sorcery' ? '+ 1 (Linaje)' : ''}
-                          </p>
                       </div>
 
                       {needsMetamagic && (
                           <div className="space-y-3 animate-fadeIn">
                               <h4 className="text-xs font-bold uppercase tracking-wider text-purple-500 flex items-center gap-1">
-                                  <span className="material-symbols-outlined text-sm">auto_awesome</span> Elige {metamagicCount} Metamagia(s)
+                                  <span className="material-symbols-outlined text-sm">auto_fix_normal</span> Elige {metamagicCount} Metamagia(s)
                               </h4>
                               <div className="grid grid-cols-1 gap-2">
                                   {METAMAGIC_OPTIONS.filter(m => !character.metamagics?.includes(m.name)).map(meta => {
@@ -357,9 +355,9 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                                 <select 
                                     value={pendingSubclass}
                                     onChange={(e) => setPendingSubclass(e.target.value)}
-                                    className="w-full p-3 bg-white dark:bg-surface-dark border border-purple-500/30 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-purple-500 text-slate-900 dark:text-white"
+                                    className="w-full p-4 bg-white dark:bg-surface-dark border border-purple-500/30 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-purple-500 text-slate-900 dark:text-white"
                                 >
-                                    <option value="" disabled>Seleccionar...</option>
+                                    <option value="" disabled>Seleccionar Subclase...</option>
                                     {(SUBCLASS_OPTIONS[character.class] || []).map(sub => (
                                         <option key={sub.name} value={sub.name}>{sub.name}</option>
                                     ))}
@@ -417,7 +415,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                                       <select 
                                           value={pendingFeat}
                                           onChange={(e) => setPendingFeat(e.target.value)}
-                                          className="w-full p-3 bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold outline-none text-slate-900 dark:text-white"
+                                          className="w-full p-4 bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold outline-none text-slate-900 dark:text-white"
                                       >
                                           <option value="" disabled>Seleccionar Dote...</option>
                                           {FEAT_OPTIONS.map(f => (
@@ -430,17 +428,17 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                       )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 mt-6 shrink-0">
+                  <div className="grid grid-cols-2 gap-3 mt-8 shrink-0">
                       <button 
                           onClick={() => setShowLevelUp(false)}
-                          className="py-3 rounded-xl font-bold text-sm text-slate-500 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                          className="py-3.5 rounded-2xl font-bold text-sm text-slate-500 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
                       >
                           Cancelar
                       </button>
                       <button 
                           onClick={confirmLevelUp}
                           disabled={!isLevelUpValid()}
-                          className={`py-3 rounded-xl font-bold text-sm text-white shadow-lg transition-all active:scale-95 ${isLevelUpValid() ? 'bg-green-500 hover:bg-green-600 shadow-green-500/30' : 'bg-slate-300 dark:bg-white/10 cursor-not-allowed shadow-none'}`}
+                          className={`py-3.5 rounded-2xl font-bold text-sm text-white shadow-lg transition-all active:scale-95 ${isLevelUpValid() ? 'bg-green-500 hover:bg-green-600 shadow-green-500/30' : 'bg-slate-300 dark:bg-white/10 cursor-not-allowed shadow-none'}`}
                       >
                           Confirmar
                       </button>

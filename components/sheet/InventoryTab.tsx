@@ -27,7 +27,7 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ character, onUpdate }) => {
             quantity: 1,
             equipped: false
         };
-        updateInventory([...inventory, newItem]);
+        updateInventory([newItem, ...inventory]);
         setShowAddItem(false);
         setSearchQuery('');
     };
@@ -44,7 +44,6 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ character, onUpdate }) => {
         const newInv = inventory.map(item => {
             if (item.id === itemId) return { ...item, equipped: !item.equipped };
             
-            // Logic to unequip other armor/shields if necessary
             if (isShield && !itemToToggle.equipped && item.equipped) {
                  const idata = getItemData(item.name);
                  if (idata?.type === 'Armor' && (idata as ArmorData).armorType === 'Shield') {
@@ -71,7 +70,6 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ character, onUpdate }) => {
         return acc + (itemData ? itemData.weight * item.quantity : 0);
     }, 0);
     
-    // We calculate STR to show encumbrance
     const finalStats = getFinalStats(character);
     const carryCap = (finalStats.STR || 10) * 15;
     const equippedItems = inventory.filter(i => i.equipped);
@@ -133,7 +131,7 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ character, onUpdate }) => {
        </div>
 
        {showAddItem && (
-           <div className="absolute inset-0 z-50 bg-background-light dark:bg-background-dark flex flex-col p-4 animate-fadeIn">
+           <div className="fixed inset-0 z-50 bg-background-light dark:bg-background-dark flex flex-col p-4 animate-fadeIn pt-[env(safe-area-inset-top)]">
                <div className="flex items-center gap-3 mb-4">
                    <button onClick={() => setShowAddItem(false)} className="size-10 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center"><span className="material-symbols-outlined">close</span></button>
                    <div className="flex-1 relative"><input autoFocus type="text" placeholder="Search items..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-slate-100 dark:bg-black/20 border-none rounded-xl py-2.5 pl-10 pr-4 outline-none focus:ring-2 ring-primary/50"/><span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400">search</span></div>
@@ -146,9 +144,11 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ character, onUpdate }) => {
                </div>
            </div>
        )}
+
+       {/* Centered Item Detail Modal */}
        {selectedItem && (
-         <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setSelectedItem(null)}>
-            <div className="w-full max-w-sm bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-2xl transform transition-all scale-100" onClick={e => e.stopPropagation()}>
+         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn" onClick={() => setSelectedItem(null)}>
+            <div className="w-full max-w-sm bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-2xl animate-scaleUp flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
                 {(() => {
                     const itemData = (getItemData(selectedItem.name) || { name: selectedItem.name, type: 'Gear', weight: 0, cost: '-', description: '' }) as ItemData;
                     const isMagic = MAGIC_ITEMS[selectedItem.name] !== undefined;
@@ -157,15 +157,38 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ character, onUpdate }) => {
                     const asArmor = itemData as ArmorData;
                     return (
                         <>
-                           <div className="flex items-start justify-between mb-4"><div><h3 className="text-xl font-bold text-slate-900 dark:text-white">{selectedItem.name}</h3><span className="text-sm text-slate-500">{itemData.type}</span></div><button onClick={() => setSelectedItem(null)} className="text-slate-400 hover:text-slate-600"><span className="material-symbols-outlined">close</span></button></div>
-                           <div className="space-y-3 mb-6">
+                           <div className="flex items-start justify-between mb-4">
+                               <div className="min-w-0 pr-4">
+                                   <h3 className="text-xl font-bold text-slate-900 dark:text-white truncate">{selectedItem.name}</h3>
+                                   <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{itemData.type}</span>
+                               </div>
+                               <button onClick={() => setSelectedItem(null)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-slate-600">
+                                   <span className="material-symbols-outlined">close</span>
+                               </button>
+                           </div>
+                           <div className="flex-1 overflow-y-auto space-y-3 mb-6 no-scrollbar pr-1 border-t border-slate-100 dark:border-white/5 pt-4">
                                <div className="flex justify-between py-2 border-b border-slate-100 dark:border-white/5"><span className="text-sm text-slate-500">Weight</span><span className="font-bold text-slate-900 dark:text-white">{itemData.weight} lb</span></div>
                                <div className="flex justify-between py-2 border-b border-slate-100 dark:border-white/5"><span className="text-sm text-slate-500">Cost</span><span className="font-bold text-slate-900 dark:text-white">{itemData.cost}</span></div>
-                               {itemData.type === 'Weapon' && (<><div className="flex justify-between py-2 border-b border-slate-100 dark:border-white/5"><span className="text-sm text-slate-500">Damage</span><span className="font-bold text-slate-900 dark:text-white">{asWeapon.damage} {asWeapon.damageType}</span></div>{asWeapon.properties && asWeapon.properties.length > 0 && (<div className="py-2 border-b border-slate-100 dark:border-white/5"><span className="text-sm text-slate-500 block mb-1">Properties</span><div className="flex flex-wrap gap-1">{asWeapon.properties.map(p => (<span key={p} className="px-2 py-0.5 bg-slate-100 dark:bg-white/10 rounded text-xs font-medium text-slate-600 dark:text-slate-300">{p}</span>))}</div></div>)}{asWeapon.mastery && (<div className="py-2 border-b border-slate-100 dark:border-white/5"><span className="text-sm text-slate-500 block mb-1">Mastery: <span className="font-bold text-primary">{asWeapon.mastery}</span></span><p className="text-xs text-slate-400 italic">{MASTERY_DESCRIPTIONS[asWeapon.mastery]}</p></div>)}</>)}
+                               {itemData.type === 'Weapon' && (<><div className="flex justify-between py-2 border-b border-slate-100 dark:border-white/5"><span className="text-sm text-slate-500">Damage</span><span className="font-bold text-slate-900 dark:text-white">{asWeapon.damage} {asWeapon.damageType}</span></div>{asWeapon.properties && asWeapon.properties.length > 0 && (<div className="py-2 border-b border-slate-100 dark:border-white/5"><span className="text-sm text-slate-500 block mb-1">Properties</span><div className="flex flex-wrap gap-1">{asWeapon.properties.map(p => (<span key={p} className="px-2 py-0.5 bg-slate-100 dark:bg-white/10 rounded text-xs font-medium text-slate-600 dark:text-slate-300">{p}</span>))}</div></div>)}{asWeapon.mastery && (<div className="py-2 border-b border-slate-100 dark:border-white/5"><span className="text-sm text-slate-500 block mb-1">Mastery: <span className="font-bold text-primary">{asWeapon.mastery}</span></span><p className="text-xs text-slate-400 italic leading-snug">{MASTERY_DESCRIPTIONS[asWeapon.mastery]}</p></div>)}</>)}
                                {itemData.type === 'Armor' && (<div className="flex justify-between py-2 border-b border-slate-100 dark:border-white/5"><span className="text-sm text-slate-500">AC</span><span className="font-bold text-slate-900 dark:text-white">{asArmor.baseAC} {asArmor.armorType === 'Shield' ? '(Shield)' : asArmor.armorType === 'Light' ? '+ Dex' : asArmor.armorType === 'Medium' ? '+ Dex (max 2)' : ''}</span></div>)}
-                               {itemData.description && (<div className="py-2"><p className="text-sm text-slate-600 dark:text-slate-300 italic">{itemData.description}</p></div>)}
+                               {itemData.description && (<div className="py-2"><p className="text-sm text-slate-600 dark:text-slate-300 italic leading-relaxed">{itemData.description}</p></div>)}
                            </div>
-                           <div className="grid grid-cols-2 gap-3">{isEquippable && (<button onClick={() => { toggleEquip(selectedItem.id); setSelectedItem(null); }} className={`py-3 rounded-xl font-bold text-sm transition-colors ${selectedItem.equipped ? 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300' : 'bg-primary text-background-dark'}`}>{selectedItem.equipped ? 'Unequip' : 'Equip'}</button>)}<button onClick={() => { removeItem(selectedItem.id); setSelectedItem(null); }} className={`py-3 rounded-xl font-bold text-sm bg-red-500/10 text-red-500 border border-transparent hover:border-red-500 transition-colors ${!isEquippable ? 'col-span-2' : ''}`}>Remove</button></div>
+                           <div className="grid grid-cols-2 gap-3 shrink-0 pt-2">
+                               {isEquippable && (
+                                   <button 
+                                       onClick={() => { toggleEquip(selectedItem.id); setSelectedItem(null); }} 
+                                       className={`py-3.5 rounded-2xl font-bold text-sm transition-all ${selectedItem.equipped ? 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300' : 'bg-primary text-background-dark shadow-lg shadow-primary/20'}`}
+                                   >
+                                       {selectedItem.equipped ? 'Unequip' : 'Equip'}
+                                   </button>
+                               )}
+                               <button 
+                                   onClick={() => { removeItem(selectedItem.id); setSelectedItem(null); }} 
+                                   className={`py-3.5 rounded-2xl font-bold text-sm bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all ${!isEquippable ? 'col-span-2' : ''}`}
+                               >
+                                   Remove
+                               </button>
+                           </div>
                         </>
                     );
                 })()}

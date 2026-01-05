@@ -1,5 +1,7 @@
+
 import React, { useState, useMemo } from 'react';
-import { Character, Ability, WeaponData } from '../../types';
+import { createPortal } from 'react-dom';
+import { Character, Ability, WeaponData, ArmorData } from '../../types';
 import { SKILL_LIST, SKILL_ABILITY_MAP } from '../../Data/skills';
 import { MASTERY_DESCRIPTIONS } from '../../Data/items';
 import { CLASS_SAVING_THROWS } from '../../Data/characterOptions';
@@ -20,10 +22,52 @@ const CombatTab: React.FC<CombatTabProps> = ({ character, onUpdate }) => {
     const armorClass = useMemo(() => getArmorClass(character, finalStats), [character, finalStats]);
     const savingThrowBonus = useMemo(() => getSavingThrowBonus(character), [character]);
 
-    const isDraconicActive = character.class === 'Sorcerer' && character.subclass === 'Draconic Sorcery' && !character.inventory.some(i => i.equipped && getItemData(i.name)?.type === 'Armor' && (getItemData(i.name) as any).armorType !== 'Shield');
+    const isDraconicActive = useMemo(() => {
+        const hasArmor = character.inventory.some(i => {
+            if (!i.equipped) return false;
+            const data = getItemData(i.name);
+            return data?.type === 'Armor' && (data as ArmorData).armorType !== 'Shield';
+        });
+        return character.class === 'Sorcerer' && character.subclass === 'Draconic Sorcery' && !hasArmor;
+    }, [character]);
+
+    const isMonk = character.class === 'Monk';
+    const isBarbarian = character.class === 'Barbarian';
+    const isWarriorOfMercy = character.subclass === 'Warrior of Mercy';
 
     const strMod = Math.floor(((finalStats.STR || 10) - 10) / 2);
     const dexMod = Math.floor(((finalStats.DEX || 10) - 10) / 2);
+
+    const hpPercent = (character.hp.current / character.hp.max) * 100;
+    const hpColorClass = hpPercent > 75 
+        ? 'text-emerald-500' 
+        : hpPercent > 35 
+            ? 'text-amber-500' 
+            : 'text-red-500';
+
+    const maxFocus = character.level;
+    const currentFocus = character.focus?.current ?? maxFocus;
+    const focusPercent = (currentFocus / maxFocus) * 100;
+    const focusColorClass = focusPercent > 60 
+        ? 'text-cyan-400' 
+        : focusPercent > 25 
+            ? 'text-cyan-500' 
+            : 'text-cyan-700';
+
+    const useFocus = (amount: number = 1) => {
+        if (currentFocus < amount) return;
+        onUpdate({
+            ...character,
+            focus: { current: Math.max(0, currentFocus - amount), max: maxFocus }
+        });
+    };
+
+    const resetFocus = () => {
+        onUpdate({
+            ...character,
+            focus: { current: maxFocus, max: maxFocus }
+        });
+    };
 
     const openHpModal = (type: 'damage' | 'heal') => {
         setHpModal({ show: true, type });
@@ -59,7 +103,7 @@ const CombatTab: React.FC<CombatTabProps> = ({ character, onUpdate }) => {
         const hasDueling = character.feats.some(f => f.includes('Dueling'));
         const hasArchery = character.feats.some(f => f.includes('Archery'));
         const hasThrown = character.feats.some(f => f.includes('Thrown Weapon'));
-        const isMonk = character.class === 'Monk';
+        
         let martialArtsDie = '1d6';
         if (character.level >= 5) martialArtsDie = '1d8';
         if (character.level >= 11) martialArtsDie = '1d10';
@@ -197,31 +241,114 @@ const CombatTab: React.FC<CombatTabProps> = ({ character, onUpdate }) => {
                 })}
             </div>
 
-            <div className="flex flex-col gap-2 rounded-2xl bg-white dark:bg-surface-dark p-4 shadow-sm ring-1 ring-slate-200 dark:ring-white/5 mb-6 relative overflow-hidden">
-                {character.class === 'Barbarian' && (
-                    <div className="flex justify-end mb-2">
-                        <button 
-                            onClick={() => setIsRaging(!isRaging)}
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${isRaging ? 'bg-red-500 text-white shadow-lg shadow-red-500/30' : 'bg-slate-100 dark:bg-white/10 text-slate-500'}`}
-                        >
-                            <span className="material-symbols-outlined text-[16px]">{isRaging ? 'local_fire_department' : 'sentiment_neutral'}</span>
-                            {isRaging ? 'Furia Activa' : 'Furia'}
-                        </button>
+            {/* Combined Resource Section */}
+            <div className="flex flex-col gap-3 mb-6">
+                {/* Health Section */}
+                <div className="flex flex-col gap-4 rounded-3xl bg-white dark:bg-surface-dark p-6 shadow-lg border border-slate-200 dark:border-white/5 overflow-hidden relative">
+                    {isBarbarian && (
+                        <div className="absolute top-4 right-5">
+                            <button 
+                                onClick={() => setIsRaging(!isRaging)}
+                                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm ${isRaging ? 'bg-red-500 text-white ring-2 ring-red-500/20' : 'bg-slate-100 dark:bg-white/10 text-slate-500'}`}
+                            >
+                                <span className="material-symbols-outlined text-xs">{isRaging ? 'local_fire_department' : 'sentiment_neutral'}</span>
+                                {isRaging ? 'Furia' : 'Furia'}
+                            </button>
+                        </div>
+                    )}
+                    
+                    <div className="flex justify-between items-end">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Puntos de Golpe</span>
+                            <div className="flex items-baseline gap-2">
+                                <span className={`text-5xl font-black tracking-tight transition-colors duration-500 ${hpColorClass}`}>
+                                    {character.hp.current}
+                                </span>
+                                <span className="text-xl font-bold text-slate-400">/ {character.hp.max}</span>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => openHpModal('damage')} 
+                                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white dark:bg-black/20 border border-red-500/30 text-red-500 hover:bg-red-500/5 active:scale-90 transition-all group"
+                                title="Recibir Daño"
+                            >
+                                <span className="material-symbols-outlined font-bold">heart_broken</span>
+                            </button>
+                            <button 
+                                onClick={() => openHpModal('heal')} 
+                                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white dark:bg-black/20 border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/5 active:scale-90 transition-all group"
+                                title="Curar"
+                            >
+                                <span className="material-symbols-outlined font-bold">healing</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="relative h-2 w-full rounded-full bg-slate-100 dark:bg-black/40 overflow-hidden">
+                        <div 
+                            className={`absolute top-0 left-0 h-full rounded-full transition-all duration-700 ease-out ${hpPercent < 25 ? 'bg-red-500' : 'bg-primary shadow-[0_0_10px_rgba(53,158,255,0.4)]'}`} 
+                            style={{ width: `${Math.min(100, hpPercent)}%` }}
+                        ></div>
+                    </div>
+
+                    {character.hp.temp > 0 && (
+                        <div className="flex items-center gap-2 -mt-1">
+                            <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest leading-none">Temporal: {character.hp.temp}</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Discreet Monk Focus Section - Centered and Balanced */}
+                {isMonk && (
+                    <div className="flex flex-col gap-3 rounded-2xl bg-white/50 dark:bg-surface-dark/50 p-5 border border-slate-200 dark:border-white/5 backdrop-blur-sm items-center text-center">
+                        <div className="flex flex-col items-center gap-1">
+                            <span className="text-[10px] font-bold text-cyan-500 dark:text-cyan-400 uppercase tracking-widest mb-1">Focus Points</span>
+                            <div className="flex items-baseline justify-center gap-2">
+                                <span className={`text-3xl font-black tracking-tighter ${focusColorClass}`}>{currentFocus}</span>
+                                <span className="text-sm font-bold text-slate-400">/ {maxFocus}</span>
+                                <button 
+                                    onClick={resetFocus}
+                                    className="ml-2 size-7 flex items-center justify-center rounded-full bg-cyan-500/10 text-cyan-500 hover:bg-cyan-500/20 active:scale-90 transition-all"
+                                    title="Meditar"
+                                >
+                                    <span className="material-symbols-outlined text-sm">refresh</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="relative h-1 w-48 rounded-full bg-slate-200 dark:bg-black/40 overflow-hidden mb-2">
+                            <div 
+                                className="absolute top-0 left-0 h-full bg-cyan-400 transition-all duration-700 ease-out shadow-[0_0_8px_rgba(34,211,238,0.5)]" 
+                                style={{ width: `${focusPercent}%` }}
+                            ></div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 w-full max-w-sm pt-2">
+                            {[
+                                { name: 'Flurry', cost: 1, icon: 'flare', desc: 'Extra Atk' },
+                                { name: 'Defense', cost: 1, icon: 'shield_person', desc: 'Dodge/Dis' },
+                                { name: 'Step', cost: 1, icon: 'directions_run', desc: 'Dash/Dis' },
+                                ...(isWarriorOfMercy ? [
+                                    { name: 'Healing', cost: 1, icon: 'healing', desc: 'Restore HP' },
+                                    { name: 'Harm', cost: 1, icon: 'skull', desc: '+Nec Dmg' }
+                                ] : [])
+                            ].map((act) => (
+                                <button
+                                    key={act.name}
+                                    onClick={() => useFocus(act.cost)}
+                                    disabled={currentFocus < act.cost}
+                                    className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${currentFocus >= act.cost ? 'bg-white dark:bg-cyan-500/5 border-cyan-500/20 text-cyan-600 dark:text-cyan-400 active:scale-95 shadow-sm hover:border-cyan-500/40' : 'opacity-20 cursor-not-allowed border-slate-200 dark:border-white/5'}`}
+                                >
+                                    <span className="material-symbols-outlined text-base mb-0.5">{act.icon}</span>
+                                    <span className="text-[10px] font-bold uppercase leading-tight">{act.name}</span>
+                                    <span className="text-[8px] font-medium opacity-60 mt-0.5 line-clamp-1">{act.desc}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 )}
-                <div className="flex justify-between items-end">
-                    <div className="flex flex-col">
-                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Hit Points</span>
-                        <span className="text-2xl font-bold dark:text-white text-slate-900 leading-none">{character.hp.current} <span className="text-base font-normal text-slate-400">/ {character.hp.max}</span></span>
-                    </div>
-                    <div className="flex gap-2 mt-4 sm:mt-0">
-                        <button onClick={() => openHpModal('damage')} className="flex items-center justify-center size-10 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-colors border border-transparent hover:border-red-600 active:scale-95"><span className="material-symbols-outlined text-[20px]">remove</span></button>
-                        <button onClick={() => openHpModal('heal')} className="flex items-center justify-center size-10 rounded-xl bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white transition-colors border border-transparent hover:border-green-600 active:scale-95"><span className="material-symbols-outlined text-[20px]">add</span></button>
-                    </div>
-                </div>
-                <div className="relative h-3 w-full rounded-full bg-slate-100 dark:bg-black/40 overflow-hidden">
-                    <div className={`absolute top-0 left-0 h-full rounded-full transition-all duration-500 ${character.hp.current < character.hp.max / 4 ? 'bg-red-500' : 'bg-primary'}`} style={{ width: `${Math.min(100, (character.hp.current / character.hp.max) * 100)}%` }}></div>
-                </div>
             </div>
 
             <div className="flex items-center justify-between group cursor-pointer mb-3">
@@ -273,29 +400,30 @@ const CombatTab: React.FC<CombatTabProps> = ({ character, onUpdate }) => {
                 </div>
             </div>
 
-            {/* HP Edit Modal */}
-            {hpModal.show && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setHpModal({ ...hpModal, show: false })}>
-                    <div className="w-full max-w-[280px] bg-white dark:bg-surface-dark p-5 rounded-3xl shadow-2xl scale-100 transition-transform" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-center font-bold text-lg mb-4 text-slate-900 dark:text-white">
-                            {hpModal.type === 'heal' ? 'Curar' : 'Daño'}
+            {/* HP Edit Modal - Centered via Portal */}
+            {hpModal.show && createPortal(
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm animate-fadeIn" onClick={() => setHpModal({ ...hpModal, show: false })}>
+                    <div className="w-full max-w-[280px] bg-white dark:bg-surface-dark p-6 rounded-3xl shadow-2xl animate-scaleUp" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-center font-bold text-lg mb-4 text-slate-900 dark:text-white uppercase tracking-widest">
+                            {hpModal.type === 'heal' ? 'Restaurar Vida' : 'Recibir Daño'}
                         </h3>
                         <input 
                             type="number" 
                             value={hpAmount}
                             onChange={(e) => setHpAmount(e.target.value)}
                             autoFocus
-                            className="w-full text-center text-4xl font-bold bg-transparent border-b-2 border-slate-200 dark:border-white/10 py-2 mb-6 outline-none focus:border-primary text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                            className="w-full text-center text-5xl font-black bg-transparent border-b-2 border-slate-200 dark:border-white/10 py-3 mb-8 outline-none focus:border-primary text-slate-900 dark:text-white placeholder:text-slate-200 dark:placeholder:text-slate-700"
                             placeholder="0"
                         />
                         <div className="grid grid-cols-2 gap-3">
-                            <button onClick={() => setHpModal({ ...hpModal, show: false })} className="py-3 rounded-xl font-bold text-sm text-slate-500 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">Cancelar</button>
-                            <button onClick={applyHpChange} className={`py-3 rounded-xl font-bold text-sm text-white shadow-lg transition-transform active:scale-95 ${hpModal.type === 'heal' ? 'bg-green-500 shadow-green-500/30' : 'bg-red-500 shadow-red-500/30'}`}>
+                            <button onClick={() => setHpModal({ ...hpModal, show: false })} className="py-3 rounded-2xl font-bold text-sm text-slate-500 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">Cancelar</button>
+                            <button onClick={applyHpChange} className={`py-3 rounded-2xl font-bold text-sm text-white shadow-lg transition-transform active:scale-95 ${hpModal.type === 'heal' ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-red-500 shadow-red-500/30'}`}>
                                 Confirmar
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

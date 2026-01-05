@@ -480,6 +480,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
             background: selectedBackground,
             alignment: selectedAlignment,
             hp: { current: calculateMaxHP(), max: calculateMaxHP(), temp: 0 },
+            focus: selectedClass === 'Monk' ? { current: level, max: level } : undefined, // Initial focus
             ac: calculateAC(),
             init: Math.floor(((finalStats.DEX || 10) - 10) / 2),
             speed: calculateSpeed(),
@@ -616,7 +617,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                         <div className={`
                                             w-36 h-52 rounded-3xl p-4 flex flex-col items-center justify-between transition-all duration-300 ease-out border-2
                                             ${isSelected 
-                                                ? 'bg-white dark:bg-surface-dark border-primary shadow-[0_10px_30px_-10px_rgba(53,158,255,0.4)] scale-105 -translate-y-1' 
+                                                ? 'bg-white dark:bg-surface-dark border-primary shadow-[0_10px_30px_-10px_rgba(53,158,255,0.4)] scale-105' 
                                                 : 'bg-white/60 dark:bg-surface-dark/60 border-transparent hover:border-slate-300 dark:hover:border-white/10 hover:bg-white dark:hover:bg-surface-dark shadow-sm'
                                             }
                                         `}>
@@ -889,7 +890,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                                 w-36 h-28 rounded-2xl p-3 flex flex-col items-center justify-center gap-1 transition-all duration-300 ease-out border-2
                                                 ${isSelected 
                                                     ? 'bg-white dark:bg-surface-dark border-primary shadow-lg scale-105' 
-                                                    : 'bg-white/70 dark:bg-surface-dark/70 border-transparent hover:border-slate-300 dark:hover:border-white/10 hover:bg-white dark:hover:bg-surface-dark'
+                                                    : 'bg-white/70 dark:bg-surface-dark/70 border-transparent hover:border-slate-300 dark:hover:border-white/20 hover:bg-white dark:hover:bg-surface-dark'
                                                 }
                                             `}>
                                                 <span className={`material-symbols-outlined text-2xl ${ui.color} ${isSelected ? 'scale-110' : ''} transition-transform`}>{ui.icon}</span>
