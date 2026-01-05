@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Character, CreatorStep, Ability, Trait, SubclassData } from '../types';
 import { MAP_TEXTURE, CLASS_UI_MAP, SPECIES_UI_MAP, BACKGROUND_UI_MAP } from '../constants';
@@ -13,7 +14,8 @@ import {
   HIT_DIE,
   CLASS_STAT_PRIORITIES,
   SUBCLASS_OPTIONS,
-  CLASS_PROGRESSION
+  CLASS_PROGRESSION,
+  METAMAGIC_OPTIONS
 } from '../Data/characterOptions';
 import { FEAT_OPTIONS, GENERIC_FEATURES } from '../Data/feats';
 import { SKILL_LIST } from '../Data/skills';
@@ -143,6 +145,8 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   const [selectedFeat, setSelectedFeat] = useState<string>(''); 
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedHumanSkill, setSelectedHumanSkill] = useState<string>('');
+  const [selectedElfSkill, setSelectedElfSkill] = useState<string>('');
+  const [selectedMetamagics, setSelectedMetamagics] = useState<string[]>([]);
   
   const [statMethod, setStatMethod] = useState<'pointBuy' | 'standard' | 'manual'>('pointBuy');
   const [baseStats, setBaseStats] = useState<Record<Ability, number>>({ STR: 8, DEX: 8, CON: 8, INT: 8, WIS: 8, CHA: 8 });
@@ -180,6 +184,13 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
           }
       }
       return levels;
+  }, [selectedClass, level]);
+
+  const maxMetamagics = useMemo(() => {
+      if (selectedClass !== 'Sorcerer' || level < 2) return 0;
+      if (level >= 17) return 4;
+      if (level >= 10) return 3;
+      return 2;
   }, [selectedClass, level]);
 
   const finalStats = useMemo(() => {
@@ -223,12 +234,17 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     } else {
         setSelectedHumanSkill('');
     }
+    
+    if (selectedSpecies !== 'Elf') {
+        setSelectedElfSkill('');
+    }
   }, [selectedSpecies, speciesData, selectedFeat]);
 
   useEffect(() => {
     setSelectedSkills([]);
     setSelectedSubclass('');
     setAsiDecisions({});
+    setSelectedMetamagics([]);
   }, [selectedClass]);
 
   useEffect(() => {
@@ -245,8 +261,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
   useEffect(() => {
     if (availableSubclasses.length > 0 && !selectedSubclass) {
-        // Permitimos seleccionar subclase desde nivel 1 para previsualizar beneficios (ej. Draconic AC)
-        // Aunque se desbloquee oficialmente al 3 en 2024
+        // Permitimos seleccionar subclase desde nivel 1 para previsualizar beneficios
     }
   }, [level, availableSubclasses, selectedSubclass]);
 
@@ -268,6 +283,16 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
         setSelectedSkills(prev => [...prev, skill]);
       }
     }
+  };
+
+  const toggleMetamagic = (meta: string) => {
+      if (selectedMetamagics.includes(meta)) {
+          setSelectedMetamagics(prev => prev.filter(m => m !== meta));
+      } else {
+          if (selectedMetamagics.length < maxMetamagics) {
+              setSelectedMetamagics(prev => [...prev, meta]);
+          }
+      }
   };
 
   const handleStatChange = (stat: Ability, delta: number) => {
@@ -309,7 +334,9 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     if (step === 4) {
         const classSkillsOk = selectedSkills.length === classSkillOptions.count;
         const humanSkillOk = selectedSpecies === 'Human' ? !!selectedHumanSkill : true;
-        return classSkillsOk && humanSkillOk;
+        const elfSkillOk = selectedSpecies === 'Elf' ? !!selectedElfSkill : true;
+        const metamagicOk = maxMetamagics > 0 ? selectedMetamagics.length === maxMetamagics : true;
+        return classSkillsOk && humanSkillOk && elfSkillOk && metamagicOk;
     }
     return true;
   };
@@ -326,7 +353,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     } else if (selectedClass === 'Monk') {
         ac = 10 + dexMod + wisMod;
     } else if (selectedClass === 'Sorcerer' && selectedSubclass === 'Draconic Sorcery') {
-        // Regla 2024 Draconic Resilience: 10 + DEX + CHA
         ac = 10 + dexMod + chaMod;
     }
     return ac;
@@ -459,13 +485,14 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
             speed: calculateSpeed(),
             profBonus: Math.ceil(1 + (level / 4)),
             stats: finalStats,
-            skills: [...(backgroundData?.skills || []), ...selectedSkills, ...(selectedHumanSkill ? [selectedHumanSkill] : [])],
+            skills: [...(backgroundData?.skills || []), ...selectedSkills, ...(selectedHumanSkill ? [selectedHumanSkill] : []), ...(selectedElfSkill ? [selectedElfSkill] : [])],
             languages: ['Common', selectedLanguage1, selectedLanguage2].filter(Boolean),
             feats: [
                 backgroundData?.feat, 
                 speciesData?.name === 'Human' ? selectedFeat : undefined,
                 ...asiLevels.map(l => asiDecisions[l]?.type === 'feat' ? asiDecisions[l]?.feat : undefined)
             ].filter((f): f is string => !!f),
+            metamagics: selectedMetamagics,
             inventory: [trinket, ...(backgroundData?.equipment || [])].map((itemStr, i) => {
               const match = itemStr.match(/^(.*?) \((\d+)\)$/);
               return {
@@ -1212,6 +1239,28 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
         {step === 4 && (
             <div className="px-6 py-4 space-y-6">
+                {selectedSpecies === 'Elf' && (
+                    <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-xl border border-green-100 dark:border-green-900/20 mb-4 animate-fadeIn">
+                        <div className="flex items-center gap-2 mb-3">
+                            <span className="material-symbols-outlined text-green-600">visibility</span>
+                            <h3 className="text-base font-bold text-slate-900 dark:text-white">Keen Senses (Elfo)</h3>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                            Como elfo, tus sentidos están agudizados. Elige una de estas habilidades.
+                        </p>
+                        <select 
+                            value={selectedElfSkill}
+                            onChange={(e) => setSelectedElfSkill(e.target.value)}
+                            className="w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/50"
+                        >
+                            <option value="" disabled>Selecciona una habilidad...</option>
+                            {['Insight', 'Perception', 'Survival'].map(skill => (
+                                <option key={skill} value={skill}>{skill}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+
                 {selectedSpecies === 'Human' && (
                     <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/20">
                         <div className="flex items-center gap-2 mb-3">
@@ -1230,6 +1279,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                             {SKILL_LIST.map(skill => {
                                 if (backgroundData?.skills.includes(skill)) return null;
                                 if (selectedSkills.includes(skill)) return null;
+                                if (selectedElfSkill === skill) return null;
                                 return <option key={skill} value={skill}>{skill}</option>;
                             })}
                         </select>
@@ -1250,17 +1300,18 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                             const isSelected = selectedSkills.includes(skill);
                             const isBackground = backgroundData?.skills.includes(skill);
                             const isHumanSelected = selectedHumanSkill === skill;
+                            const isElfSelected = selectedElfSkill === skill;
 
-                            if (!isAvailable && !isBackground && !isHumanSelected) return null;
+                            if (!isAvailable && !isBackground && !isHumanSelected && !isElfSelected) return null;
 
                             return (
                                 <button 
                                     key={skill}
-                                    onClick={() => !isBackground && !isHumanSelected && toggleSkill(skill)}
-                                    disabled={isBackground || isHumanSelected}
+                                    onClick={() => !isBackground && !isHumanSelected && !isElfSelected && toggleSkill(skill)}
+                                    disabled={isBackground || isHumanSelected || isElfSelected}
                                     className={`
                                         flex items-center justify-between p-3.5 rounded-xl border transition-all
-                                        ${isBackground || isHumanSelected
+                                        ${isBackground || isHumanSelected || isElfSelected
                                             ? 'bg-slate-100 dark:bg-white/5 border-transparent opacity-80' 
                                             : isSelected 
                                                 ? 'bg-primary/5 border-primary shadow-[0_0_15px_rgba(53,158,255,0.2)]' 
@@ -1268,19 +1319,61 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                         }
                                     `}
                                 >
-                                    <span className={`font-bold ${isSelected || isBackground || isHumanSelected ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>
+                                    <span className={`font-bold ${isSelected || isBackground || isHumanSelected || isElfSelected ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>
                                         {skill} 
                                         {isBackground && <span className="text-[10px] text-primary uppercase ml-2">(Trasfondo)</span>}
                                         {isHumanSelected && <span className="text-[10px] text-blue-500 uppercase ml-2">(Humano)</span>}
+                                        {isElfSelected && <span className="text-[10px] text-green-500 uppercase ml-2">(Elfo)</span>}
                                     </span>
-                                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected || isBackground || isHumanSelected ? 'bg-primary border-primary' : 'border-slate-300 dark:border-slate-600'}`}>
-                                        {(isSelected || isBackground || isHumanSelected) && <span className="material-symbols-outlined text-sm text-black font-bold">check</span>}
+                                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected || isBackground || isHumanSelected || isElfSelected ? 'bg-primary border-primary' : 'border-slate-300 dark:border-slate-600'}`}>
+                                        {(isSelected || isBackground || isHumanSelected || isElfSelected) && <span className="material-symbols-outlined text-sm text-black font-bold">check</span>}
                                     </div>
                                 </button>
                             );
                         })}
                     </div>
                 </div>
+
+                {maxMetamagics > 0 && (
+                    <div className="mt-8 animate-fadeIn">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold">Metamagias</h3>
+                            <div className="text-sm font-medium text-slate-500">
+                                Elegidas: <span className={`${selectedMetamagics.length === maxMetamagics ? 'text-primary' : 'text-slate-900 dark:text-white'} font-bold`}>{selectedMetamagics.length}</span> / {maxMetamagics}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3">
+                            {METAMAGIC_OPTIONS.map(meta => {
+                                const isSelected = selectedMetamagics.includes(meta.name);
+                                const isDisabled = !isSelected && selectedMetamagics.length >= maxMetamagics;
+
+                                return (
+                                    <button 
+                                        key={meta.name}
+                                        onClick={() => toggleMetamagic(meta.name)}
+                                        disabled={isDisabled}
+                                        className={`
+                                            flex flex-col p-4 rounded-xl border transition-all text-left
+                                            ${isSelected 
+                                                ? 'bg-primary/5 border-primary shadow-sm' 
+                                                : isDisabled 
+                                                    ? 'opacity-40 cursor-not-allowed border-slate-200 dark:border-white/5'
+                                                    : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-white/10 hover:border-primary/40'
+                                            }
+                                        `}
+                                    >
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className={`font-bold ${isSelected ? 'text-primary' : 'text-slate-900 dark:text-white'}`}>{meta.name}</span>
+                                            {isSelected && <span className="material-symbols-outlined text-primary text-base">check_circle</span>}
+                                        </div>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-snug">{meta.description}</p>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
             </div>
         )}
 
@@ -1379,6 +1472,19 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                         </div>
                     </div>
 
+                    {selectedMetamagics.length > 0 && (
+                        <div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Metamagias</span>
+                            <div className="flex flex-wrap gap-1.5">
+                                {selectedMetamagics.map(m => (
+                                    <span key={m} className="px-2 py-1 rounded-md bg-purple-500/10 text-xs font-bold text-purple-400 border border-purple-500/20">
+                                        {m}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="pt-1">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Idiomas</span>
                         <div className="flex flex-wrap gap-1.5">
@@ -1394,7 +1500,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                  <div>
                     <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5 pl-1">Habilidades Entrenadas</h4>
                     <div className="flex flex-wrap gap-2">
-                        {[...(backgroundData?.skills || []), ...selectedSkills, ...(selectedHumanSkill ? [selectedHumanSkill] : [])].map(skill => (
+                        {[...(backgroundData?.skills || []), ...selectedSkills, ...(selectedHumanSkill ? [selectedHumanSkill] : []), ...(selectedElfSkill ? [selectedElfSkill] : [])].map(skill => (
                             <div key={skill} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary">
                                 <span className="material-symbols-outlined text-[14px]">check</span>
                                 <span className="text-xs font-bold">{skill}</span>

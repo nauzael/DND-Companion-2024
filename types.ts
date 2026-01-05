@@ -31,6 +31,7 @@ export interface Character {
   skills: string[];
   languages: string[];
   feats: string[];
+  metamagics?: string[];
   imageUrl: string;
   inventory: InventoryItem[]; 
   preparedSpells?: string[];

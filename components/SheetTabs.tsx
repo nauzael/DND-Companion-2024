@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Character, SheetTab, Ability } from '../types';
 import CombatTab from './sheet/CombatTab';
@@ -6,7 +7,7 @@ import SpellsTab from './sheet/SpellsTab';
 import FeaturesTab from './sheet/FeaturesTab';
 import NotesTab from './sheet/NotesTab';
 import { getEffectiveCasterType, getFinalStats } from '../utils/sheetUtils';
-import { HIT_DIE, CLASS_PROGRESSION, SUBCLASS_OPTIONS } from '../Data/characterOptions';
+import { HIT_DIE, CLASS_PROGRESSION, SUBCLASS_OPTIONS, METAMAGIC_OPTIONS } from '../Data/characterOptions';
 import { FEAT_OPTIONS, GENERIC_FEATURES } from '../Data/feats';
 
 interface SheetTabsProps {
@@ -28,6 +29,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
   const [pendingStat1, setPendingStat1] = useState<Ability>('STR');
   const [pendingStat2, setPendingStat2] = useState<Ability>('STR');
   const [pendingFeat, setPendingFeat] = useState<string>('');
+  const [pendingMetamagics, setPendingMetamagics] = useState<string[]>([]);
 
   const touchStart = useRef<{ x: number, y: number } | null>(null);
   const touchEnd = useRef<{ x: number, y: number } | null>(null);
@@ -129,6 +131,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
       setPendingFeat('');
       setPendingStat1('STR');
       setPendingStat2('DEX');
+      setPendingMetamagics([]);
       
       setShowLevelUp(true);
   };
@@ -138,6 +141,18 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
   
   const needsSubclass = !character.subclass && newFeatures.some(f => f.includes('Subclass'));
   const needsAsi = newFeatures.includes('Ability Score Improvement');
+  const needsMetamagic = character.class === 'Sorcerer' && (nextLevel === 2 || nextLevel === 10 || nextLevel === 17);
+  const metamagicCount = nextLevel === 2 ? 2 : 1;
+
+  const togglePendingMetamagic = (meta: string) => {
+      if (pendingMetamagics.includes(meta)) {
+          setPendingMetamagics(prev => prev.filter(m => m !== meta));
+      } else {
+          if (pendingMetamagics.length < metamagicCount) {
+              setPendingMetamagics(prev => [...prev, meta]);
+          }
+      }
+  };
 
   const confirmLevelUp = () => {
       const hpGain = parseInt(manualHpGain) || 0;
@@ -156,7 +171,8 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
               ...character.hp,
               max: character.hp.max + hpGain + retroactiveHp,
               current: character.hp.current + hpGain + retroactiveHp 
-          }
+          },
+          metamagics: [...(character.metamagics || []), ...pendingMetamagics]
       };
 
       if (needsSubclass && pendingSubclass) {
@@ -184,6 +200,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
   const isLevelUpValid = () => {
       if (needsSubclass && !pendingSubclass) return false;
       if (needsAsi && pendingAsiType === 'feat' && !pendingFeat) return false;
+      if (needsMetamagic && pendingMetamagics.length < metamagicCount) return false;
       return true;
   };
 
@@ -308,27 +325,26 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                           </p>
                       </div>
 
-                      {Math.ceil(1 + (nextLevel / 4)) > character.profBonus && (
-                          <div className="flex items-center justify-center gap-2 text-sm font-bold text-indigo-500 bg-indigo-50 dark:bg-indigo-900/10 py-2 rounded-xl border border-indigo-100 dark:border-indigo-900/20">
-                              <span className="material-symbols-outlined text-lg">school</span>
-                              <span>¡Bono de Competencia +{Math.ceil(1 + (nextLevel / 4))}!</span>
-                          </div>
-                      )}
-
-                      {newFeatures.length > 0 && (
-                          <div className="space-y-2">
-                              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Nuevos Rasgos</h4>
-                              {newFeatures.map((featName, idx) => {
-                                  if (featName === 'Ability Score Improvement' || featName.includes('Subclass')) return null;
-                                  
-                                  const desc = GENERIC_FEATURES[featName] || "Un nuevo rasgo de clase.";
-                                  return (
-                                      <div key={idx} className="bg-white dark:bg-surface-dark p-3 rounded-xl border border-slate-200 dark:border-white/10">
-                                          <p className="font-bold text-slate-900 dark:text-white text-sm mb-1">{featName}</p>
-                                          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{desc}</p>
-                                      </div>
-                                  );
-                              })}
+                      {needsMetamagic && (
+                          <div className="space-y-3 animate-fadeIn">
+                              <h4 className="text-xs font-bold uppercase tracking-wider text-purple-500 flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-sm">auto_awesome</span> Elige {metamagicCount} Metamagia(s)
+                              </h4>
+                              <div className="grid grid-cols-1 gap-2">
+                                  {METAMAGIC_OPTIONS.filter(m => !character.metamagics?.includes(m.name)).map(meta => {
+                                      const isSelected = pendingMetamagics.includes(meta.name);
+                                      return (
+                                          <button 
+                                              key={meta.name}
+                                              onClick={() => togglePendingMetamagic(meta.name)}
+                                              className={`text-left p-3 rounded-xl border transition-all ${isSelected ? 'bg-purple-500/10 border-purple-500' : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-white/5'}`}
+                                          >
+                                              <p className={`font-bold text-sm ${isSelected ? 'text-purple-500' : 'text-slate-900 dark:text-white'}`}>{meta.name}</p>
+                                              <p className="text-[10px] text-slate-500 leading-snug">{meta.description}</p>
+                                          </button>
+                                      );
+                                  })}
+                              </div>
                           </div>
                       )}
 
@@ -349,11 +365,6 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                                     ))}
                                 </select>
                               </div>
-                              {pendingSubclass && (
-                                  <p className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-white/5 p-2 rounded-lg">
-                                      {SUBCLASS_OPTIONS[character.class]?.find(s => s.name === pendingSubclass)?.description}
-                                  </p>
-                              )}
                           </div>
                       )}
 
@@ -400,9 +411,6 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                                               {(['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'] as Ability[]).map(s => <option key={s} value={s}>{s}</option>)}
                                           </select>
                                       </div>
-                                      <div className="col-span-2 text-xs text-center text-slate-400">
-                                          {pendingStat1 === pendingStat2 ? `+2 Total a ${pendingStat1}` : `+1 ${pendingStat1}, +1 ${pendingStat2}`}
-                                      </div>
                                   </div>
                               ) : (
                                   <div>
@@ -416,11 +424,6 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                                               <option key={f.name} value={f.name}>{f.name}</option>
                                           ))}
                                       </select>
-                                      {pendingFeat && (
-                                          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-white/5 p-2 rounded-lg max-h-24 overflow-y-auto">
-                                              {FEAT_OPTIONS.find(f => f.name === pendingFeat)?.description}
-                                          </p>
-                                      )}
                                   </div>
                               )}
                           </div>
