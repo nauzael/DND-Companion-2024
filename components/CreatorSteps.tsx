@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Character, CreatorStep, Ability, Trait, SubclassData } from '../types';
 import { MAP_TEXTURE, CLASS_UI_MAP, SPECIES_UI_MAP, BACKGROUND_UI_MAP } from '../constants';
@@ -25,15 +24,12 @@ interface CreatorStepsProps {
   onFinish: (char: Character) => void;
 }
 
-// ... (Rest of imports and helpers remain same until CreatorSteps component)
-
 const POINT_BUY_COSTS: Record<number, number> = {
   8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9
 };
 
 const DEFAULT_CHAR_IMAGE = "https://lh3.googleusercontent.com/aida-public/AB6AXuAZr-RDRTUNGSsd_-BR5U-r2yLkQsbKsJ6mAkTpEGl0e4IZW86PQSc2se3iegp_aML54kIgoYOyDhlwHDiNPfKasvRE8Wymti23tWDRa-QL1JZUqBNPNDJzOj5AknxSMaVS0FH7GW9srFK1u5uzt7Nb5M5LvPbaZUGy484PX685rHODXkI9CwFaha_RbMGbh-LOIz8R0OqlhyI9CDp--2zy5UhpgJ8GLuhKjmJsjCWKb-F8PJWpJtTk_3AmSP79rbDxmeLWsGsP61hv";
 
-// Helper for ASI Selection State
 interface AsiDecision {
     type: 'stat' | 'feat';
     stat1?: Ability;
@@ -85,7 +81,6 @@ const ClassProgressionList = ({ selectedClass, subclassData, currentLevel }: { s
                         {Array.from({ length: 20 }, (_, i) => i + 1).map((lvl) => {
                             const features: { name: string, desc: string }[] = [];
                             
-                            // 1. Add Class Features
                             if (lvl === 1) {
                                classData?.traits.forEach(t => features.push({ name: t.name, desc: t.description }));
                             } else {
@@ -93,13 +88,11 @@ const ClassProgressionList = ({ selectedClass, subclassData, currentLevel }: { s
                                classFeats.forEach(feat => {
                                    let desc = GENERIC_FEATURES?.[feat];
                                    if (!desc && feat.includes("Ability Score")) desc = "Mejora una característica o elige una dote.";
-                                   // Generic fallback or subclass pointer
                                    if (!desc && feat.includes("Subclass")) desc = "Ganás un rasgo de tu subclase elegida.";
                                    features.push({ name: feat, desc: desc || "" });
                                });
                             }
 
-                            // 2. Add Subclass Features (if selected)
                             if (subclassData && subclassData.features[lvl]) {
                                 subclassData.features[lvl].forEach(trait => {
                                     features.push({ name: trait.name, desc: trait.description });
@@ -135,7 +128,6 @@ const ClassProgressionList = ({ selectedClass, subclassData, currentLevel }: { s
 };
 
 const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
-  // ... (State definitions remain identical)
   const [step, setStep] = useState<CreatorStep>(1);
   const mainRef = useRef<HTMLDivElement>(null);
   const [name, setName] = useState('');
@@ -172,7 +164,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
       return `Trinket: ${TRINKETS[randomIndex]}`;
   });
 
-  // ... (Hooks and calculations remain identical)
   const speciesData = SPECIES_DETAILS[selectedSpecies];
   const classData = CLASS_DETAILS[selectedClass];
   const backgroundData = BACKGROUNDS_DATA[selectedBackground];
@@ -253,10 +244,9 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   }, [selectedBackground, backgroundData]);
 
   useEffect(() => {
-    if (level >= 3 && !selectedSubclass && availableSubclasses.length > 0) {
-        setSelectedSubclass(availableSubclasses[0].name);
-    } else if (level < 3) {
-        setSelectedSubclass('');
+    if (availableSubclasses.length > 0 && !selectedSubclass) {
+        // Permitimos seleccionar subclase desde nivel 1 para previsualizar beneficios (ej. Draconic AC)
+        // Aunque se desbloquee oficialmente al 3 en 2024
     }
   }, [level, availableSubclasses, selectedSubclass]);
 
@@ -325,22 +315,25 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
   };
 
   const calculateAC = () => {
-    const dexMod = Math.floor((finalStats.DEX - 10) / 2);
-    const conMod = Math.floor((finalStats.CON - 10) / 2);
-    const wisMod = Math.floor((finalStats.WIS - 10) / 2);
+    const dexMod = Math.floor(((finalStats.DEX || 10) - 10) / 2);
+    const conMod = Math.floor(((finalStats.CON || 10) - 10) / 2);
+    const wisMod = Math.floor(((finalStats.WIS || 10) - 10) / 2);
+    const chaMod = Math.floor(((finalStats.CHA || 10) - 10) / 2);
+    
     let ac = 10 + dexMod;
     if (selectedClass === 'Barbarian') {
         ac = 10 + dexMod + conMod;
     } else if (selectedClass === 'Monk') {
         ac = 10 + dexMod + wisMod;
     } else if (selectedClass === 'Sorcerer' && selectedSubclass === 'Draconic Sorcery') {
-        ac = 13 + dexMod;
+        // Regla 2024 Draconic Resilience: 10 + DEX + CHA
+        ac = 10 + dexMod + chaMod;
     }
     return ac;
   };
 
   const calculateMaxHP = () => {
-    const conMod = Math.floor((finalStats.CON - 10) / 2);
+    const conMod = Math.floor(((finalStats.CON || 10) - 10) / 2);
     const hitDie = HIT_DIE[selectedClass] || 8;
     let baseHp = 0;
     baseHp += hitDie + conMod;
@@ -355,18 +348,20 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     let bonusTotal = 0;
     if (selectedSpecies === 'Dwarf') bonusTotal += level;
     if (selectedClass === 'Sorcerer' && selectedSubclass === 'Draconic Sorcery') bonusTotal += level;
+    
     const allFeats = [
         backgroundData?.feat, 
         speciesData?.name === 'Human' ? selectedFeat : undefined,
         ...asiLevels.map(l => asiDecisions[l]?.type === 'feat' ? asiDecisions[l]?.feat : undefined)
     ].filter(Boolean);
     if (allFeats.includes('Tough')) bonusTotal += (level * 2);
+    
     return Math.max(1, baseHp + bonusTotal);
   };
 
   const renderHpBreakdown = () => {
     const hitDie = HIT_DIE[selectedClass] || 8;
-    const conMod = Math.floor((finalStats.CON - 10) / 2);
+    const conMod = Math.floor(((finalStats.CON || 10) - 10) / 2);
     const avgRoll = Math.floor(hitDie / 2) + 1;
     
     let bonuses = [];
@@ -434,7 +429,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
       const passives: string[] = [];
       if (selectedClass === 'Barbarian') passives.push('Unarmored Defense (CON)');
       if (selectedClass === 'Monk') passives.push('Unarmored Defense (WIS)');
-      if (selectedClass === 'Sorcerer' && selectedSubclass === 'Draconic Sorcery') passives.push('Draconic Resilience (AC 13+DEX, +1 HP/lvl)');
+      if (selectedClass === 'Sorcerer' && selectedSubclass === 'Draconic Sorcery') passives.push('Draconic Resilience (AC 10+DEX+CHA, +1 HP/lvl)');
       if (selectedSpecies === 'Dwarf') passives.push('Dwarven Toughness (+1 HP/lvl)');
       const feats = [
           backgroundData?.feat, 
@@ -460,7 +455,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
             alignment: selectedAlignment,
             hp: { current: calculateMaxHP(), max: calculateMaxHP(), temp: 0 },
             ac: calculateAC(),
-            init: Math.floor((finalStats.DEX - 10) / 2),
+            init: Math.floor(((finalStats.DEX || 10) - 10) / 2),
             speed: calculateSpeed(),
             profBonus: Math.ceil(1 + (level / 4)),
             stats: finalStats,
@@ -506,7 +501,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
   return (
     <div className="flex flex-col h-full min-h-screen relative bg-background-light dark:bg-background-dark">
-      {/* Header with Safe Area Padding */}
       <header className="flex items-center justify-between p-4 pt-[calc(1.5rem+env(safe-area-inset-top))] z-10 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm sticky top-0">
         <button onClick={prevStep} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
           <span className="material-symbols-outlined text-2xl">arrow_back</span>
@@ -522,7 +516,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
       <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar pb-5">
         {step === 1 && (
-            // ... (Step 1 Content - No changes needed)
             <>
                 <div className="px-6 pt-3 pb-1">
                     <h1 className="text-3xl font-bold leading-tight tracking-tight text-slate-900 dark:text-white">
@@ -680,13 +673,13 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
                 </div>
 
-                {/* Subclass Selection (Level 3+) */}
-                {level >= 3 && availableSubclasses.length > 0 && (
+                {availableSubclasses.length > 0 && (
                     <div className="mb-4 animate-fadeIn">
-                        <SectionSeparator label="Subclase" />
+                        <SectionSeparator label="Subclase / Linaje" />
                         <div className="px-6 flex flex-col items-center mb-4 text-center">
-                            <h3 className="text-xl font-bold">Elige tu Camino</h3>
+                            <h3 className="text-xl font-bold">Escoge tu Linaje</h3>
                             <span className="text-primary text-sm font-medium mt-1 max-w-[80%] truncate">{selectedSubclass || 'Selecciona una especialización'}</span>
+                            {level < 3 && <p className="text-[10px] text-slate-400 mt-1 italic">Nota: En 2024 las subclases se eligen formalmente al nivel 3, pero puedes pre-seleccionarla para planear tu AC y HP.</p>}
                         </div>
                         
                         <div className="w-full relative group">
@@ -774,7 +767,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
                 <div className="space-y-3">
                     <SectionSeparator label="Raza" />
-                    {/* ... (Rest of Step 1) */}
                     <div className="px-6">
                         <div className="flex justify-between items-end mb-3">
                              <h3 className="text-lg font-bold">Raza</h3>
@@ -925,11 +917,8 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
             </>
         )}
 
-        {/* ... (Step 2, 3, 4, 5 content blocks remain unchanged) ... */}
         {step === 2 && (
             <div className="px-6 py-4 space-y-6">
-                
-                {/* Background Bonuses Config */}
                 <div className="bg-white dark:bg-surface-dark p-4 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm">
                     <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary text-lg">auto_awesome</span>
@@ -970,7 +959,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                             onClick={() => {
                                                 setBgPlus2(s);
                                                 if (bgPlus1 === s) {
-                                                    // Swap or pick another
                                                     const other = backgroundData.scores.find(x => x !== s) || s;
                                                     setBgPlus1(other);
                                                 }
@@ -1051,7 +1039,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                     </div>
                 </div>
 
-                {/* HP Method Selection */}
                 <div className="pt-2 border-t border-slate-200 dark:border-white/10">
                     <div className="flex justify-between items-end mb-3">
                         <h3 className="text-lg font-bold">Puntos de Golpe</h3>
@@ -1085,7 +1072,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                     {renderHpBreakdown()}
                 </div>
 
-                {/* Level Up ASI/Feat Selections */}
                 {asiLevels.length > 0 && (
                     <div className="pt-2 border-t border-slate-200 dark:border-white/10 space-y-4">
                         <h3 className="text-lg font-bold">Mejoras de Nivel</h3>
@@ -1114,7 +1100,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                     {decision.type === 'stat' ? (
                                         <div className="grid grid-cols-2 gap-3">
                                             <div>
-                                                <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Carac. 1 (+1)</label>
+                                                <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">+1 a...</label>
                                                 <select 
                                                     value={decision.stat1} 
                                                     onChange={(e) => handleAsiChange(lvl, { stat1: e.target.value as Ability })}
@@ -1124,7 +1110,7 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Carac. 2 (+1)</label>
+                                                <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">+1 a...</label>
                                                 <select 
                                                     value={decision.stat2} 
                                                     onChange={(e) => handleAsiChange(lvl, { stat2: e.target.value as Ability })}
@@ -1242,7 +1228,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                         >
                             <option value="" disabled>Selecciona una habilidad extra...</option>
                             {SKILL_LIST.map(skill => {
-                                // Exclude background skills and currently selected class skills
                                 if (backgroundData?.skills.includes(skill)) return null;
                                 if (selectedSkills.includes(skill)) return null;
                                 return <option key={skill} value={skill}>{skill}</option>;
@@ -1301,8 +1286,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
         {step === 5 && (
             <div className="px-6 py-4 space-y-6">
-                 {/* ... (Step 5 logic for creating character) */}
-                 {/* Header Identity */}
                  <div className="flex flex-col items-center">
                     <div className="w-24 h-24 rounded-3xl bg-slate-200 dark:bg-surface-light mb-3 shadow-lg border-2 border-white dark:border-white/10" style={{backgroundImage: `url(${charImage})`, backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
                     <h2 className="text-3xl font-bold text-center text-slate-900 dark:text-white leading-tight">{name || 'Heroe'}</h2>
@@ -1321,14 +1304,12 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                     </div>
                  </div>
 
-                 {/* ... (Existing Combat Stats, Abilities, etc display code) ... */}
-                 {/* Combat Stats */}
                  <div className="grid grid-cols-4 gap-3">
                     {[
                       { l: 'HP', v: calculateMaxHP(), i: 'favorite', c: 'text-red-500' },
                       { l: 'AC', v: calculateAC(), i: 'shield', c: 'text-blue-500' },
                       { l: 'SPD', v: calculateSpeed(), i: 'directions_run', c: 'text-green-500' },
-                      { l: 'INI', v: `${Math.floor((finalStats.DEX - 10) / 2) >= 0 ? '+' : ''}${Math.floor((finalStats.DEX - 10) / 2)}`, i: 'bolt', c: 'text-yellow-500' }
+                      { l: 'INI', v: `${Math.floor(((finalStats.DEX || 10) - 10) / 2) >= 0 ? '+' : ''}${Math.floor(((finalStats.DEX || 10) - 10) / 2)}`, i: 'bolt', c: 'text-yellow-500' }
                     ].map(s => (
                         <div key={s.l} className="flex flex-col items-center p-2.5 rounded-2xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 shadow-sm">
                             <span className={`material-symbols-outlined ${s.c} text-lg mb-1`}>{s.i}</span>
@@ -1338,7 +1319,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                     ))}
                  </div>
 
-                 {/* Abilities */}
                  <div>
                     <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5 pl-1">Atributos</h4>
                     <div className="grid grid-cols-3 gap-2">
@@ -1351,7 +1331,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                     </div>
                  </div>
 
-                 {/* Profile Details */}
                  <div className="bg-white dark:bg-surface-dark rounded-2xl p-4 border border-slate-200 dark:border-white/10 space-y-4 shadow-sm">
                     <div className="flex justify-between items-start border-b border-slate-100 dark:border-white/5 pb-3">
                         <div className="flex flex-col">
@@ -1412,7 +1391,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                     </div>
                  </div>
 
-                 {/* Skills */}
                  <div>
                     <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5 pl-1">Habilidades Entrenadas</h4>
                     <div className="flex flex-wrap gap-2">
@@ -1448,7 +1426,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
         </div>
       )}
 
-      {/* Feat Selection Modal */}
       {showFeatModal && (
           <div className="fixed inset-0 z-50 bg-background-light dark:bg-background-dark flex flex-col animate-fadeIn pt-[env(safe-area-inset-top)]">
               <div className="flex flex-col border-b border-slate-200 dark:border-white/10 bg-white dark:bg-surface-dark">
@@ -1501,12 +1478,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                           );
                       })
                   }
-                  {FEAT_OPTIONS.filter(f => f.name.toLowerCase().includes(featSearchQuery.toLowerCase())).length === 0 && (
-                      <div className="text-center py-10 text-slate-400">
-                          <span className="material-symbols-outlined text-4xl mb-2">search_off</span>
-                          <p className="text-sm">No se encontraron dotes.</p>
-                      </div>
-                  )}
               </div>
           </div>
       )}

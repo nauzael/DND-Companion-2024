@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Character, SheetTab, Ability } from '../types';
 import CombatTab from './sheet/CombatTab';
@@ -19,24 +18,21 @@ interface SheetTabsProps {
 const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) => {
   const [activeTab, setActiveTab] = useState<SheetTab>('combat');
   const [slideDirection, setSlideDirection] = useState<'forward' | 'backward'>('forward');
+  const mainScrollRef = useRef<HTMLDivElement>(null);
   
-  // Level Up State
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [manualHpGain, setManualHpGain] = useState<string>('');
   
-  // Level Up Choices State
   const [pendingSubclass, setPendingSubclass] = useState<string>('');
   const [pendingAsiType, setPendingAsiType] = useState<'stat' | 'feat'>('stat');
   const [pendingStat1, setPendingStat1] = useState<Ability>('STR');
   const [pendingStat2, setPendingStat2] = useState<Ability>('STR');
   const [pendingFeat, setPendingFeat] = useState<string>('');
 
-  // Use refs for touch coordinates to avoid re-renders during gesture
   const touchStart = useRef<{ x: number, y: number } | null>(null);
   const touchEnd = useRef<{ x: number, y: number } | null>(null);
   const minSwipeDistance = 50;
 
-  // Magic Initiate Detection
   const magicInitiateType = useMemo(() => {
       const feats = character.feats || [];
       if (feats.some(f => f.includes('Magic Initiate (Cleric)'))) return 'Cleric';
@@ -66,11 +62,11 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
       setSlideDirection(newIndex > currentIndex ? 'forward' : 'backward');
       setActiveTab(newTabId);
       
-      // Scroll to top on tab change for better UX
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (mainScrollRef.current) {
+          mainScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      }
   };
 
-  // Swipe Handlers
   const onTouchStart = (e: React.TouchEvent) => {
     touchEnd.current = null;
     touchStart.current = {
@@ -92,7 +88,6 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
     const distanceX = touchStart.current.x - touchEnd.current.x;
     const distanceY = touchStart.current.y - touchEnd.current.y;
     
-    // If vertical movement is greater than horizontal, assume scrolling and do not swipe
     if (Math.abs(distanceY) > Math.abs(distanceX)) return;
 
     const isLeftSwipe = distanceX > minSwipeDistance;
@@ -112,7 +107,6 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
     }
   };
 
-  // Level Up Logic
   const initiateLevelUp = () => {
       if (character.level >= 20) {
           alert("¡Has alcanzado el nivel máximo (20)!");
@@ -122,15 +116,17 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
       const stats = getFinalStats(character);
       const conMod = Math.floor(((stats.CON || 10) - 10) / 2);
       const hitDie = HIT_DIE[character.class] || 8;
-      // Fixed HP Rule: Average + 1 + CON Mod
+      
+      const isDraconic = character.subclass === 'Draconic Sorcery';
+      const draconicBonus = isDraconic ? 1 : 0;
+
       const avgGain = Math.floor(hitDie / 2) + 1;
-      const totalGain = Math.max(1, avgGain + conMod);
+      const totalGain = Math.max(1, avgGain + conMod + draconicBonus);
       
       setManualHpGain(totalGain.toString());
       setPendingSubclass('');
       setPendingAsiType('stat');
       setPendingFeat('');
-      // Default stats to highest stats or STR
       setPendingStat1('STR');
       setPendingStat2('DEX');
       
@@ -147,33 +143,33 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
       const hpGain = parseInt(manualHpGain) || 0;
       const newProf = Math.ceil(1 + (nextLevel / 4));
 
-      // Build updated character
+      let retroactiveHp = 0;
+      if (needsSubclass && pendingSubclass === 'Draconic Sorcery') {
+          retroactiveHp = nextLevel; 
+      }
+
       let updatedChar = {
           ...character,
           level: nextLevel,
           profBonus: newProf,
           hp: {
               ...character.hp,
-              max: character.hp.max + hpGain,
-              current: character.hp.current + hpGain // Heal the gained amount
+              max: character.hp.max + hpGain + retroactiveHp,
+              current: character.hp.current + hpGain + retroactiveHp 
           }
       };
 
-      // Apply Subclass
       if (needsSubclass && pendingSubclass) {
           updatedChar.subclass = pendingSubclass;
       }
 
-      // Apply ASI/Feat
       if (needsAsi) {
           if (pendingAsiType === 'feat' && pendingFeat) {
               updatedChar.feats = [...(updatedChar.feats || []), pendingFeat];
           } else {
-              // Apply stats permanently
               const newStats = { ...updatedChar.stats };
               newStats[pendingStat1] = (newStats[pendingStat1] || 10) + 1;
               newStats[pendingStat2] = (newStats[pendingStat2] || 10) + 1;
-              // Cap at 20 (soft cap logic, though manuals break this, keeping it simple for level up)
               if (newStats[pendingStat1] > 20) newStats[pendingStat1] = 20;
               if (newStats[pendingStat2] > 20) newStats[pendingStat2] = 20;
               
@@ -211,7 +207,6 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
         .animate-slide-left { animation: slideInLeft 0.3s ease-out forwards; }
       `}</style>
 
-      {/* Header with Safe Area Padding */}
       <div className="sticky top-0 z-30 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-black/5 dark:border-white/5 px-4 py-3 flex items-center justify-between pt-[calc(0.75rem+env(safe-area-inset-top))]">
         <button onClick={onBack} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
           <span className="material-symbols-outlined">arrow_back</span>
@@ -231,12 +226,15 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
               )}
           </div>
         </div>
-        <div className="w-10"></div> {/* Spacer */}
+        <div className="w-10"></div>
       </div>
 
-      <main className="flex-1 overflow-y-auto no-scrollbar relative overflow-x-hidden">
+      <main 
+        ref={mainScrollRef}
+        className="flex-1 overflow-y-auto no-scrollbar relative overflow-x-hidden"
+      >
         <div 
-            key={activeTab} // Key forces re-render to trigger animation
+            key={activeTab} 
             className={`min-h-full ${slideDirection === 'forward' ? 'animate-slide-right' : 'animate-slide-left'}`}
         >
             {activeTab === 'combat' && <CombatTab character={character} onUpdate={onUpdate} />}
@@ -247,8 +245,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
         </div>
       </main>
 
-      {/* Floating Compact Tab Navigation with Safe Area Spacing */}
-      <div className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 transform -translate-x-1/2 bg-white/90 dark:bg-[#1E293B]/90 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.12)] p-1.5 z-40 flex items-center gap-1.5">
+      <div className="fixed bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-1/2 transform -translate-x-1/2 bg-white/90 dark:bg-[#1E293B]/90 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.12)] p-1.5 z-40 flex items-center gap-1.5">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -268,7 +265,6 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
           ))}
       </div>
 
-      {/* Level Up Modal */}
       {showLevelUp && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
               <div className="w-full max-w-md bg-white dark:bg-surface-dark rounded-3xl p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[85vh]">
@@ -285,7 +281,6 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                   </div>
 
                   <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-5">
-                      {/* HP Section */}
                       <div className="bg-slate-50 dark:bg-black/20 p-4 rounded-2xl border border-slate-100 dark:border-white/5">
                           <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 text-center">Aumento de HP Máximo</label>
                           <div className="flex items-center justify-center gap-4">
@@ -309,11 +304,10 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                               </button>
                           </div>
                           <p className="text-[10px] text-center text-slate-400 mt-2">
-                              Sugerido: {Math.floor((HIT_DIE[character.class] || 8) / 2) + 1} (Media) + {Math.floor(((getFinalStats(character).CON || 10) - 10) / 2)} (CON)
+                              Sugerido: {Math.floor((HIT_DIE[character.class] || 8) / 2) + 1} (Media) + {Math.floor(((getFinalStats(character).CON || 10) - 10) / 2)} (CON) {character.subclass === 'Draconic Sorcery' ? '+ 1 (Linaje)' : ''}
                           </p>
                       </div>
 
-                      {/* Prof Bonus */}
                       {Math.ceil(1 + (nextLevel / 4)) > character.profBonus && (
                           <div className="flex items-center justify-center gap-2 text-sm font-bold text-indigo-500 bg-indigo-50 dark:bg-indigo-900/10 py-2 rounded-xl border border-indigo-100 dark:border-indigo-900/20">
                               <span className="material-symbols-outlined text-lg">school</span>
@@ -321,12 +315,10 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                           </div>
                       )}
 
-                      {/* New Features List */}
                       {newFeatures.length > 0 && (
                           <div className="space-y-2">
                               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Nuevos Rasgos</h4>
                               {newFeatures.map((featName, idx) => {
-                                  // Skip generic markers that we handle via UI
                                   if (featName === 'Ability Score Improvement' || featName.includes('Subclass')) return null;
                                   
                                   const desc = GENERIC_FEATURES[featName] || "Un nuevo rasgo de clase.";
@@ -340,7 +332,6 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                           </div>
                       )}
 
-                      {/* Subclass Selection */}
                       {needsSubclass && (
                           <div className="space-y-2 animate-fadeIn">
                               <h4 className="text-xs font-bold uppercase tracking-wider text-purple-500 flex items-center gap-1">
@@ -366,7 +357,6 @@ const SheetTabs: React.FC<SheetTabsProps> = ({ character, onBack, onUpdate }) =>
                           </div>
                       )}
 
-                      {/* ASI / Feat Selection */}
                       {needsAsi && (
                           <div className="space-y-3 animate-fadeIn">
                               <h4 className="text-xs font-bold uppercase tracking-wider text-amber-500 flex items-center gap-1">

@@ -1,4 +1,3 @@
-
 import { Character, InventoryItem, Ability, ItemData, ArmorData } from '../types';
 import { ALL_ITEMS, MAGIC_ITEMS } from '../Data/items';
 import { CLASS_SAVING_THROWS } from '../Data/characterOptions';
@@ -16,7 +15,6 @@ export const SCHOOL_THEMES: Record<string, { text: string, bg: string, border: s
 
 export const getItemData = (name: string): ItemData | undefined => {
     if (ALL_ITEMS[name]) return ALL_ITEMS[name];
-    // Fallback: try to find item without quantity suffix e.g. "Dagger (2)" -> "Dagger"
     const match = name.match(/^(.*?) \((\d+)\)$/);
     if (match && ALL_ITEMS[match[1]]) return ALL_ITEMS[match[1]];
     return undefined;
@@ -88,7 +86,6 @@ export const getEffectiveCasterType = (character: Character): 'full' | 'half' | 
 
 export const getFinalStats = (character: Character): Record<string, number> => {
     const stats = { ...character.stats };
-    // Class Capstones
     if (character.class === 'Barbarian' && character.level >= 20) {
         stats.STR = (stats.STR || 10) + 4;
         stats.CON = (stats.CON || 10) + 4;
@@ -98,14 +95,10 @@ export const getFinalStats = (character: Character): Record<string, number> => {
         stats.WIS = (stats.WIS || 10) + 4;
     }
 
-    // Check Inventory for Stat Modifying Items
     const equippedNames = (character.inventory || []).filter(i => i.equipped).map(i => i.name);
     
-    // -- Additive Bonuses (Apply before Setters) --
     if (equippedNames.includes('Belt of Dwarvenkind')) stats.CON = Math.min(20, (stats.CON || 10) + 2);
     if (equippedNames.includes('Book of Exalted Deeds')) stats.WIS = Math.min(24, (stats.WIS || 10) + 2);
-
-    // Manuals/Tomes (Assuming equipped implies used/active)
     if (equippedNames.includes('Manual of Bodily Health')) stats.CON = Math.min(30, (stats.CON || 10) + 2);
     if (equippedNames.includes('Manual of Gainful Exercise')) stats.STR = Math.min(30, (stats.STR || 10) + 2);
     if (equippedNames.includes('Manual of Quickness of Action')) stats.DEX = Math.min(30, (stats.DEX || 10) + 2);
@@ -113,7 +106,6 @@ export const getFinalStats = (character: Character): Record<string, number> => {
     if (equippedNames.includes('Tome of Leadership and Influence')) stats.CHA = Math.min(30, (stats.CHA || 10) + 2);
     if (equippedNames.includes('Tome of Understanding')) stats.WIS = Math.min(30, (stats.WIS || 10) + 2);
 
-    // Ioun Stones
     if (equippedNames.includes('Ioun Stone (Agility)')) stats.DEX = Math.min(20, (stats.DEX || 10) + 2);
     if (equippedNames.includes('Ioun Stone (Fortitude)')) stats.CON = Math.min(20, (stats.CON || 10) + 2);
     if (equippedNames.includes('Ioun Stone (Insight)')) stats.WIS = Math.min(20, (stats.WIS || 10) + 2);
@@ -121,12 +113,10 @@ export const getFinalStats = (character: Character): Record<string, number> => {
     if (equippedNames.includes('Ioun Stone (Leadership)')) stats.CHA = Math.min(20, (stats.CHA || 10) + 2);
     if (equippedNames.includes('Ioun Stone (Strength)')) stats.STR = Math.min(20, (stats.STR || 10) + 2);
     
-    // -- Set Scores (Overrides) --
     if (equippedNames.includes('Gauntlets of Ogre Power')) stats.STR = Math.max(stats.STR, 19);
     if (equippedNames.includes('Headband of Intellect')) stats.INT = Math.max(stats.INT, 19);
     if (equippedNames.includes('Amulet of Health')) stats.CON = Math.max(stats.CON, 19);
     
-    // Belts of Giant Strength
     if (equippedNames.includes('Belt of Giant Strength (Hill)')) stats.STR = Math.max(stats.STR, 21);
     if (equippedNames.includes('Belt of Giant Strength (Frost)')) stats.STR = Math.max(stats.STR, 23);
     if (equippedNames.includes('Belt of Giant Strength (Stone)')) stats.STR = Math.max(stats.STR, 23);
@@ -134,7 +124,6 @@ export const getFinalStats = (character: Character): Record<string, number> => {
     if (equippedNames.includes('Belt of Giant Strength (Cloud)')) stats.STR = Math.max(stats.STR, 27);
     if (equippedNames.includes('Belt of Giant Strength (Storm)')) stats.STR = Math.max(stats.STR, 29);
 
-    // Potions
     if (equippedNames.includes('Potion of Giant Strength (Hill)')) stats.STR = Math.max(stats.STR, 21);
     if (equippedNames.includes('Potion of Giant Strength (Frost)')) stats.STR = Math.max(stats.STR, 23);
     if (equippedNames.includes('Potion of Giant Strength (Stone)')) stats.STR = Math.max(stats.STR, 23);
@@ -142,7 +131,6 @@ export const getFinalStats = (character: Character): Record<string, number> => {
     if (equippedNames.includes('Potion of Giant Strength (Cloud)')) stats.STR = Math.max(stats.STR, 27);
     if (equippedNames.includes('Potion of Giant Strength (Storm)')) stats.STR = Math.max(stats.STR, 29);
 
-    // Specific Items
     if (equippedNames.includes('Thunderous Greatclub')) stats.STR = Math.max(stats.STR, 20);
     if (equippedNames.some(n => n.includes('Hand of Vecna'))) stats.STR = Math.max(stats.STR, 20);
 
@@ -151,6 +139,7 @@ export const getFinalStats = (character: Character): Record<string, number> => {
 
 export const getArmorClass = (character: Character, finalStats: Record<string, number>) => {
     const dexMod = Math.floor(((finalStats.DEX || 10) - 10) / 2);
+    const chaMod = Math.floor(((finalStats.CHA || 10) - 10) / 2);
     let ac = 10 + dexMod;
     let hasArmor = false;
     let hasShield = false;
@@ -162,7 +151,6 @@ export const getArmorClass = (character: Character, finalStats: Record<string, n
         const itemData = getItemData(item.name);
         if (!itemData) return;
 
-        // Armor Calculation
         if (itemData.type === 'Armor') {
             const armorData = itemData as ArmorData;
             if (armorData.armorType === 'Shield') {
@@ -178,7 +166,6 @@ export const getArmorClass = (character: Character, finalStats: Record<string, n
             }
         }
 
-        // Magic Item AC Bonuses
         if (item.name === 'Ring of Protection') magicBonus += 1;
         if (item.name === 'Cloak of Protection') magicBonus += 1;
         if (item.name === 'Ioun Stone (Protection)') magicBonus += 1;
@@ -196,10 +183,10 @@ export const getArmorClass = (character: Character, finalStats: Record<string, n
             const wisMod = Math.floor(((finalStats.WIS || 10) - 10) / 2);
             ac = 10 + dexMod + wisMod;
         } else if (character.class === 'Sorcerer' && character.subclass === 'Draconic Sorcery') {
-            ac = 13 + dexMod;
+            // Regla 2024: 10 + Dex + Cha
+            ac = 10 + dexMod + chaMod;
         }
 
-        // Bracers of Defense check
         const equippedNames = (character.inventory || []).filter(i => i.equipped).map(i => i.name);
         if (equippedNames.includes('Bracers of Defense') && !hasShield) {
             magicBonus += 2;

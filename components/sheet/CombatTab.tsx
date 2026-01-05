@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Character, Ability, WeaponData } from '../../types';
 import { SKILL_LIST, SKILL_ABILITY_MAP } from '../../Data/skills';
@@ -19,6 +18,8 @@ const CombatTab: React.FC<CombatTabProps> = ({ character, onUpdate }) => {
 
     const finalStats = useMemo(() => getFinalStats(character), [character]);
     const armorClass = useMemo(() => getArmorClass(character, finalStats), [character, finalStats]);
+
+    const isDraconicActive = character.class === 'Sorcerer' && character.subclass === 'Draconic Sorcery' && !character.inventory.some(i => i.equipped && getItemData(i.name)?.type === 'Armor' && (getItemData(i.name) as any).armorType !== 'Shield');
 
     const strMod = Math.floor(((finalStats.STR || 10) - 10) / 2);
     const dexMod = Math.floor(((finalStats.DEX || 10) - 10) / 2);
@@ -164,7 +165,7 @@ const CombatTab: React.FC<CombatTabProps> = ({ character, onUpdate }) => {
         <div className="px-4 pb-20">
             <div className="grid grid-cols-4 gap-3 my-4">
                 {[
-                    { icon: "shield", label: "AC", value: armorClass, color: "text-primary" },
+                    { icon: "shield", label: "AC", value: armorClass, color: "text-primary", sub: isDraconicActive ? "Draconic" : "" },
                     { icon: "bolt", label: "Init", value: formatModifier(character.init), color: "text-yellow-500" },
                     { icon: "sprint", label: "Spd", value: character.speed, color: "text-blue-400" },
                     { icon: "school", label: "Prof", value: `+${character.profBonus}`, color: "text-purple-400" },
@@ -174,6 +175,7 @@ const CombatTab: React.FC<CombatTabProps> = ({ character, onUpdate }) => {
                         <span className={`material-symbols-outlined mb-1 ${stat.color} text-[20px]`}>{stat.icon}</span>
                         <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{stat.label}</span>
                         <span className="text-xl font-bold dark:text-white text-slate-900 leading-none mt-1">{stat.value}</span>
+                        {stat.sub && <span className="text-[8px] font-bold text-primary absolute bottom-1">{stat.sub}</span>}
                     </div>
                 ))}
             </div>
@@ -233,7 +235,7 @@ const CombatTab: React.FC<CombatTabProps> = ({ character, onUpdate }) => {
                 <div className="grid grid-cols-3 gap-3">
                     {(['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'] as Ability[]).map(stat => {
                         const mod = Math.floor(((finalStats[stat] || 10) - 10) / 2);
-                        const isProf = CLASS_SAVING_THROWS[character.class]?.includes(stat);
+                        const isProf = CLASS_SAVING_THROWS[character.class]?.includes(stat) || (character.class === 'Monk' && character.level >= 14);
                         let save = mod + (isProf ? character.profBonus : 0);
                         
                         if (character.inventory.some(i => i.equipped && (i.name === 'Cloak of Protection' || i.name === 'Ring of Protection'))) save += 1;
