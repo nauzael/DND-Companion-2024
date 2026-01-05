@@ -133,7 +133,7 @@ const FeaturesTab: React.FC<FeaturesTabProps> = ({ character }) => {
             {renderSection('Subclase', groupedFeatures['Subclase'])}
             {renderSection('Dote', groupedFeatures['Dote'])}
 
-            {Object.values(groupedFeatures).every(g => g.length === 0) && (
+            {Object.values(groupedFeatures).every((g: FeatureItem[]) => g.length === 0) && (
                 <div className="flex flex-col items-center justify-center py-20 opacity-40">
                     <div className="size-20 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-4">
                         <span className="material-symbols-outlined text-4xl text-slate-400">auto_awesome_motion</span>

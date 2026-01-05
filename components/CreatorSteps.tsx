@@ -18,7 +18,8 @@ import {
   METAMAGIC_OPTIONS
 } from '../Data/characterOptions';
 import { FEAT_OPTIONS, GENERIC_FEATURES } from '../Data/feats';
-import { SKILL_LIST } from '../Data/skills';
+// Fix: Import SKILL_ABILITY_MAP from skills Data
+import { SKILL_LIST, SKILL_ABILITY_MAP } from '../Data/skills';
 import { TRINKETS } from '../Data/items';
 
 interface CreatorStepsProps {
@@ -240,6 +241,13 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
     }
   }, [selectedSpecies, speciesData, selectedFeat]);
 
+  // Clear subclass selection if level is below 3 (D&D 2024 Rule)
+  useEffect(() => {
+    if (level < 3 && selectedSubclass) {
+      setSelectedSubclass('');
+    }
+  }, [level, selectedSubclass]);
+
   useEffect(() => {
     setSelectedSkills([]);
     setSelectedSubclass('');
@@ -258,12 +266,6 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
         setBgAsiMode('three');
     }
   }, [selectedBackground, backgroundData]);
-
-  useEffect(() => {
-    if (availableSubclasses.length > 0 && !selectedSubclass) {
-        // Permitimos seleccionar subclase desde nivel 1 para previsualizar beneficios
-    }
-  }, [level, availableSubclasses, selectedSubclass]);
 
   useEffect(() => {
     if (statMethod === 'pointBuy') {
@@ -701,13 +703,12 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
                 </div>
 
-                {availableSubclasses.length > 0 && (
+                {availableSubclasses.length > 0 && level >= 3 ? (
                     <div className="mb-4 animate-fadeIn">
                         <SectionSeparator label="Subclase / Linaje" />
                         <div className="px-6 flex flex-col items-center mb-4 text-center">
                             <h3 className="text-xl font-bold">Escoge tu Linaje</h3>
                             <span className="text-primary text-sm font-medium mt-1 max-w-[80%] truncate">{selectedSubclass || 'Selecciona una especialización'}</span>
-                            {level < 3 && <p className="text-[10px] text-slate-400 mt-1 italic">Nota: En 2024 las subclases se eligen formalmente al nivel 3, pero puedes pre-seleccionarla para planear tu AC y HP.</p>}
                         </div>
                         
                         <div className="w-full relative group">
@@ -790,6 +791,14 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
                                 </div>
                             </div>
                         )}
+                    </div>
+                ) : (
+                    <div className="px-6 py-8 animate-fadeIn text-center">
+                        <div className="inline-flex items-center justify-center size-12 rounded-full bg-slate-100 dark:bg-white/5 text-slate-400 mb-3">
+                            <span className="material-symbols-outlined">lock</span>
+                        </div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Subclase bloqueada</p>
+                        <p className="text-[10px] text-slate-500 mt-1">Podrás elegir tu linaje al alcanzar el nivel 3.</p>
                     </div>
                 )}
 
@@ -1297,37 +1306,37 @@ const CreatorSteps: React.FC<CreatorStepsProps> = ({ onBack, onFinish }) => {
 
                     <div className="grid grid-cols-1 gap-2">
                         {SKILL_LIST.map(skill => {
-                            const isAvailable = classSkillOptions.options === 'Any' || classSkillOptions.options.includes(skill);
-                            const isSelected = selectedSkills.includes(skill);
+                            // Fix: Use local variables and derived state for skill calculation
+                            const ability = SKILL_ABILITY_MAP[skill];
+                            const mod = Math.floor(((finalStats[ability] || 10) - 10) / 2);
                             const isBackground = backgroundData?.skills.includes(skill);
                             const isHumanSelected = selectedHumanSkill === skill;
                             const isElfSelected = selectedElfSkill === skill;
-
-                            if (!isAvailable && !isBackground && !isHumanSelected && !isElfSelected) return null;
-
+                            const isSelected = selectedSkills.includes(skill);
+                            const isProf = isBackground || isHumanSelected || isElfSelected || isSelected;
+                            const currentProfBonus = Math.ceil(1 + (level / 4));
+                            const total = mod + (isProf ? currentProfBonus : 0);
+                            
                             return (
                                 <button 
-                                    key={skill}
-                                    onClick={() => !isBackground && !isHumanSelected && !isElfSelected && toggleSkill(skill)}
-                                    disabled={isBackground || isHumanSelected || isElfSelected}
-                                    className={`
-                                        flex items-center justify-between p-3.5 rounded-xl border transition-all
-                                        ${isBackground || isHumanSelected || isElfSelected
-                                            ? 'bg-slate-100 dark:bg-white/5 border-transparent opacity-80' 
-                                            : isSelected 
-                                                ? 'bg-primary/5 border-primary shadow-[0_0_15px_rgba(53,158,255,0.2)]' 
-                                                : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-white/10 hover:border-primary/50'
-                                        }
-                                    `}
+                                    key={skill} 
+                                    onClick={() => !isBackground && !isHumanSelected && !isElfSelected && toggleSkill(skill)} 
+                                    disabled={isBackground || isHumanSelected || isElfSelected} 
+                                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${isBackground || isHumanSelected || isElfSelected ? 'bg-slate-100 dark:bg-white/5 border-transparent opacity-80' : isSelected ? 'bg-primary/5 border-primary shadow-[0_0_15px_rgba(53,158,255,0.2)]' : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-white/10 hover:border-primary/50'}`}
                                 >
-                                    <span className={`font-bold ${isSelected || isBackground || isHumanSelected || isElfSelected ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>
+                                    <span className={`font-bold ${isProf ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>
                                         {skill} 
                                         {isBackground && <span className="text-[10px] text-primary uppercase ml-2">(Trasfondo)</span>}
                                         {isHumanSelected && <span className="text-[10px] text-blue-500 uppercase ml-2">(Humano)</span>}
                                         {isElfSelected && <span className="text-[10px] text-green-500 uppercase ml-2">(Elfo)</span>}
                                     </span>
-                                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected || isBackground || isHumanSelected || isElfSelected ? 'bg-primary border-primary' : 'border-slate-300 dark:border-slate-600'}`}>
-                                        {(isSelected || isBackground || isHumanSelected || isElfSelected) && <span className="material-symbols-outlined text-sm text-black font-bold">check</span>}
+                                    <div className="flex items-center gap-3">
+                                        <span className={`text-xs font-bold ${isProf ? 'text-primary' : 'text-slate-400'}`}>
+                                            {total >= 0 ? '+' : ''}{total}
+                                        </span>
+                                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isProf ? 'bg-primary border-primary' : 'border-slate-300 dark:border-slate-600'}`}>
+                                            {isProf && <span className="material-symbols-outlined text-sm text-black font-bold">check</span>}
+                                        </div>
                                     </div>
                                 </button>
                             );
