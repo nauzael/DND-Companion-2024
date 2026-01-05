@@ -3,7 +3,7 @@ import { Character, Ability, WeaponData } from '../../types';
 import { SKILL_LIST, SKILL_ABILITY_MAP } from '../../Data/skills';
 import { MASTERY_DESCRIPTIONS } from '../../Data/items';
 import { CLASS_SAVING_THROWS } from '../../Data/characterOptions';
-import { getFinalStats, getArmorClass, formatModifier, getItemData } from '../../utils/sheetUtils';
+import { getFinalStats, getArmorClass, formatModifier, getItemData, getSavingThrowBonus } from '../../utils/sheetUtils';
 
 interface CombatTabProps {
     character: Character;
@@ -18,6 +18,7 @@ const CombatTab: React.FC<CombatTabProps> = ({ character, onUpdate }) => {
 
     const finalStats = useMemo(() => getFinalStats(character), [character]);
     const armorClass = useMemo(() => getArmorClass(character, finalStats), [character, finalStats]);
+    const savingThrowBonus = useMemo(() => getSavingThrowBonus(character), [character]);
 
     const isDraconicActive = character.class === 'Sorcerer' && character.subclass === 'Draconic Sorcery' && !character.inventory.some(i => i.equipped && getItemData(i.name)?.type === 'Armor' && (getItemData(i.name) as any).armorType !== 'Shield');
 
@@ -236,9 +237,7 @@ const CombatTab: React.FC<CombatTabProps> = ({ character, onUpdate }) => {
                     {(['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'] as Ability[]).map(stat => {
                         const mod = Math.floor(((finalStats[stat] || 10) - 10) / 2);
                         const isProf = CLASS_SAVING_THROWS[character.class]?.includes(stat) || (character.class === 'Monk' && character.level >= 14);
-                        let save = mod + (isProf ? character.profBonus : 0);
-                        
-                        if (character.inventory.some(i => i.equipped && (i.name === 'Cloak of Protection' || i.name === 'Ring of Protection'))) save += 1;
+                        const save = mod + (isProf ? character.profBonus : 0) + savingThrowBonus;
                         
                         return (
                             <div key={stat} className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${isProf ? 'bg-primary/10 border-primary/30' : 'bg-white dark:bg-surface-dark border-slate-200 dark:border-white/5'}`}>

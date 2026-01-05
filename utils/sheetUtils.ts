@@ -137,6 +137,35 @@ export const getFinalStats = (character: Character): Record<string, number> => {
     return stats;
 };
 
+/**
+ * Calcula el bonificador total a las tiradas de salvación proveniente de objetos mágicos equipados.
+ */
+export const getSavingThrowBonus = (character: Character): number => {
+    let bonus = 0;
+    const inventory = character.inventory || [];
+    
+    inventory.forEach(item => {
+        if (!item.equipped) return;
+        
+        // Ring of Protection (+1)
+        if (item.name === 'Ring of Protection') bonus += 1;
+        
+        // Cloak of Protection (+1)
+        if (item.name === 'Cloak of Protection') bonus += 1;
+        
+        // Stone of Good Luck (+1)
+        if (item.name === 'Stone of Good Luck') bonus += 1;
+        
+        // Robe of Stars (+1)
+        if (item.name === 'Robe of Stars') bonus += 1;
+        
+        // Scarab of Protection (+1)
+        if (item.name === 'Scarab of Protection') bonus += 1;
+    });
+    
+    return bonus;
+};
+
 export const getArmorClass = (character: Character, finalStats: Record<string, number>) => {
     const dexMod = Math.floor(((finalStats.DEX || 10) - 10) / 2);
     const chaMod = Math.floor(((finalStats.CHA || 10) - 10) / 2);
